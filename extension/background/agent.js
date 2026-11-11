@@ -157,18 +157,20 @@ export class Session {
       return done(ok ? 'Deleted.' : `No note with id ${input.id}.`, !ok);
     }
     let decision = 'run';
+    let cls = 'read';
     if (u.name === 'pve') {
       const c = classify(input.method, input.path, input.params);
+      cls = c.cls;
       decision = decide(this.mode === 'auto' ? 'auto' : 'manual', c.cls);
       if (decision === 'block') {
-        this.post({ type: 'tool', id: u.id, name: u.name, input, decision, reason });
+        this.post({ type: 'tool', id: u.id, name: u.name, input, decision, cls, reason });
         return done(`Blocked: ${c.reason ?? 'not allowed'}`, true);
       }
     } else if (u.name !== 'pve_describe') {
       return done(`Unknown tool ${u.name}.`, true);
     }
     const result = new Promise((resolve) => this.pending.set(u.id, resolve));
-    this.post({ type: 'tool', id: u.id, name: u.name, input, decision, reason });
+    this.post({ type: 'tool', id: u.id, name: u.name, input, decision, cls, reason });
     const { content, isError } = await result;
     return done(content, isError);
   }

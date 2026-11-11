@@ -78,6 +78,7 @@ test('auto mode runs writes but confirms destructive calls', async () => {
   s.toolResult('a', 'ok', false);
   const t2 = await nextTool(posts, posts.indexOf(t1) + 1);
   assert.equal(t2.decision, 'confirm');
+  assert.equal(t2.cls, 'destructive');
   s.toolResult('b', 'ok', false);
   await running;
 });
