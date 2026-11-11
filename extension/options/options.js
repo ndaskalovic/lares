@@ -1,7 +1,7 @@
 // @ts-check
 // Settings page: provider, keys, model, default mode, consent and memory notes.
 
-import { PROVIDERS } from '../background/llm.js';
+import { PROVIDERS, EFFORTS } from '../background/llm.js';
 import { getSettings, setSettings, allNotes, setNotes } from '../background/store.js';
 
 const $ = (id) => /** @type {HTMLInputElement} */ (document.getElementById(id));
@@ -37,6 +37,9 @@ for (const r of radio('mode')) r.checked = r.value === settings.mode;
 $('key-anthropic').value = settings.keys.anthropic;
 $('key-deepseek').value = settings.keys.deepseek;
 $('consent').checked = settings.consent;
+const effortSelect = /** @type {HTMLSelectElement} */ (/** @type {unknown} */ ($('effort')));
+effortSelect.replaceChildren(...EFFORTS.map((e) => new Option(e[0].toUpperCase() + e.slice(1), e)));
+effortSelect.value = settings.effort;
 $('model').onchange = () => { $('custom-wrap').hidden = $('model').value !== CUSTOM; };
 renderModels();
 
@@ -67,6 +70,7 @@ $('save').onclick = async () => {
     keys: { anthropic: $('key-anthropic').value.trim(), deepseek: $('key-deepseek').value.trim() },
     models,
     mode: /** @type {any} */ (checked('mode')),
+    effort: effortSelect.value,
     consent: $('consent').checked,
   });
   for (const [origin, list] of Object.entries(notes)) await setNotes(origin, list);

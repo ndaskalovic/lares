@@ -20,6 +20,7 @@ test('settings default and deep merge keys', async () => {
   assert.equal(s.keys.deepseek, 'k');
   assert.equal(s.keys.anthropic, '');
   assert.equal(s.models.anthropic, 'claude-haiku-5-5');
+  assert.equal(s.effort, 'medium');
 });
 
 test('chats are listed per origin, newest first, without duplicates', async () => {

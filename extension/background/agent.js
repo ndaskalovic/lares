@@ -91,7 +91,7 @@ export class Session {
     const notes = await this.store.getNotes(this.origin);
     const now = Date.now();
     return {
-      id: crypto.randomUUID(), origin: this.origin, provider: s.provider, model: s.models[s.provider],
+      id: crypto.randomUUID(), origin: this.origin, provider: s.provider, model: s.models[s.provider], effort: s.effort,
       // Frozen for the chat's lifetime: replayed thinking blocks are bound to this exact system prompt.
       system: buildSystem(this.index, memoText({ ...this.env, origin: this.origin, notes })), createdAt: now, updatedAt: now, messages: [],
     };
@@ -175,7 +175,7 @@ export class Session {
   async model(messages, onText = (t) => this.post({ type: 'delta', text: t })) {
     const s = await this.store.getSettings();
     return this.callModel({
-      provider: this.chat.provider, model: this.chat.model, key: s.keys[this.chat.provider],
+      provider: this.chat.provider, model: this.chat.model, effort: this.chat.effort ?? 'medium', key: s.keys[this.chat.provider],
       system: this.chat.system, tools: TOOLS, messages, onText,
       onRetry: () => this.post({ type: 'reset' }), signal: this.abort?.signal,
     });

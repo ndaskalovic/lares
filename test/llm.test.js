@@ -27,7 +27,12 @@ test('buildBody anthropic', () => {
 test('buildBody deepseek', () => {
   const b = buildBody({ provider: 'deepseek', model: 'deepseek-v4-pro', ...args });
   assert.equal('cache_control' in b, false);
-  assert.equal(b.output_config.effort, 'high');
+  assert.equal(b.output_config.effort, 'medium'); // DeepSeek maps medium to high itself
+});
+
+test('buildBody uses the chosen effort', () => {
+  assert.equal(buildBody({ provider: 'anthropic', model: 'm', effort: 'high', ...args }).output_config.effort, 'high');
+  assert.equal(buildBody({ provider: 'deepseek', model: 'm', effort: 'low', ...args }).output_config.effort, 'low');
 });
 
 test('providers list default models first', () => {

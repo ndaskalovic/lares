@@ -6,17 +6,18 @@ export const PROVIDERS = {
     label: 'Anthropic',
     base: 'https://api.anthropic.com',
     models: ['claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-5'],
-    effort: 'medium',
     topCache: true,
   },
   deepseek: {
     label: 'DeepSeek',
     base: 'https://api.deepseek.com/anthropic',
     models: ['deepseek-v4-pro', 'deepseek-flash'],
-    effort: 'high',
     topCache: false,
   },
 };
+
+/** Reasoning effort levels offered to the user (DeepSeek treats medium as high). */
+export const EFFORTS = ['low', 'medium', 'high'];
 
 const RETRY_STATUS = new Set([429, 500, 503, 529]);
 const MAX_RETRIES = 3;
@@ -26,9 +27,9 @@ let sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 export function setSleep(fn) { sleep = fn; }
 
 /**
- * @param {{provider: keyof PROVIDERS, model: string, system: object[], tools: object[], messages: object[]}} a
+ * @param {{provider: keyof PROVIDERS, model: string, effort?: string, system: object[], tools: object[], messages: object[]}} a
  */
-export function buildBody({ provider, model, system, tools, messages }) {
+export function buildBody({ provider, model, effort = 'medium', system, tools, messages }) {
   const p = PROVIDERS[provider];
   return {
     model,
@@ -36,7 +37,7 @@ export function buildBody({ provider, model, system, tools, messages }) {
     stream: true,
     ...(p.topCache ? { cache_control: { type: 'ephemeral' } } : {}),
     thinking: { type: 'adaptive' },
-    output_config: { effort: p.effort },
+    output_config: { effort },
     tools,
     system,
     messages,
@@ -140,11 +141,11 @@ export function errorMessage(status, body) {
 
 /**
  * Streams one model response, retrying transient failures.
- * @param {{provider: keyof PROVIDERS, model: string, key: string, system: object[], tools: object[], messages: object[],
+ * @param {{provider: keyof PROVIDERS, model: string, effort?: string, key: string, system: object[], tools: object[], messages: object[],
  *   onText?: (t: string) => void, onRetry?: () => void, signal?: AbortSignal, fetchFn?: typeof fetch}} a
  */
-export async function callModel({ provider, model, key, system, tools, messages, onText, onRetry, signal, fetchFn = (...a) => fetch(...a) }) {
-  const body = JSON.stringify(buildBody({ provider, model, system, tools, messages }));
+export async function callModel({ provider, model, effort, key, system, tools, messages, onText, onRetry, signal, fetchFn = (...a) => fetch(...a) }) {
+  const body = JSON.stringify(buildBody({ provider, model, effort, system, tools, messages }));
   for (let attempt = 0; ; attempt++) {
     const res = await fetchFn(`${PROVIDERS[provider].base}/v1/messages`, {
       method: 'POST',

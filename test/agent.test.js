@@ -153,6 +153,18 @@ test('system prompt is stable across calls in one chat', async () => {
   assert.deepEqual(calls[0].system, calls[1].system);
 });
 
+test('effort is fixed per chat from settings', async () => {
+  let seen;
+  const { s } = await setup([(a) => { seen = a.effort; return reply([text('ok')]); }]);
+  await store.setSettings({ effort: 'high' });
+  await s.open();
+  await s.send('hi', null);
+  assert.equal(seen, 'high');
+  await store.setSettings({ effort: 'low' });
+  await s.refresh();
+  assert.equal(s.chat.effort, 'high');
+});
+
 test('UI selection is sent as a context prefix', async () => {
   const { s } = await setup([reply([text('ok')])]);
   await s.send('hi', 'qemu/100');

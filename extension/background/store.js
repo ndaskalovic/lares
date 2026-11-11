@@ -2,7 +2,7 @@
 // Thin wrapper over chrome.storage.local. Only the service worker and extension pages use it.
 
 /**
- * @typedef {{id: string, origin: string, provider: 'anthropic'|'deepseek', model: string, system: object[], memo?: string,
+ * @typedef {{id: string, origin: string, provider: 'anthropic'|'deepseek', model: string, effort?: string, system: object[], memo?: string,
  *   createdAt: number, updatedAt: number, messages: any[]}} Chat
  * @typedef {{id: string, text: string}} Note
  */
@@ -12,6 +12,7 @@ export const DEFAULT_SETTINGS = {
   keys: { anthropic: '', deepseek: '' },
   models: { anthropic: 'claude-haiku-5-5', deepseek: 'deepseek-v4-pro' },
   mode: /** @type {'manual'|'auto'} */ ('manual'),
+  effort: 'medium',
   consent: false,
 };
 
