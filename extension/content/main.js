@@ -25,6 +25,7 @@
       onStop: () => send({ type: 'stop' }),
       onNew: () => send({ type: 'new' }),
       onOpen: (chatId) => send({ type: 'open', chatId }),
+      onDelete: (chatId) => send({ type: 'delete', chatId }),
       onMode: (mode) => send({ type: 'mode', mode }),
       onSummarize: () => { panel.setRunning(true); send({ type: 'summarize' }); },
     });

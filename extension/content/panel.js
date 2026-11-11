@@ -47,7 +47,7 @@ const toolLabel = (name, input = {}) => {
 class Panel {
   /**
    * @param {{onSend: (text: string) => void, onStop: () => void, onNew: () => void, onOpen: (id: string) => void,
-   *   onMode: (mode: string) => void, onSummarize: () => void, onToggle: (open: boolean) => void}} h
+   *   onMode: (mode: string) => void, onSummarize: () => void, onToggle: (open: boolean) => void, onDelete: (id: string) => void}} h
    */
   constructor(h) {
     this.h = h;
@@ -63,6 +63,7 @@ class Panel {
           <div class="mode"><button data-mode="manual" title="Ask before every change">Manual</button><button data-mode="auto" title="Run changes without asking; destructive actions still ask">Auto</button></div>
           <select class="history" title="Chats"></select>
           <button class="new" title="New chat">+</button>
+          <button class="delete" title="Delete this chat" aria-label="Delete this chat"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M6 1h4l1 1h3v2H2V2h3zM3 5h10l-1 10H4z"/></svg></button>
           <button class="close" title="Close">×</button>
         </header>
         <div class="notice" hidden></div>
@@ -94,6 +95,9 @@ class Panel {
     $('.tab').onclick = () => this.setOpen(true);
     $('.close').onclick = () => this.setOpen(false);
     $('.new').onclick = () => h.onNew();
+    $('.delete').onclick = () => {
+      if (this.chatId && !this.running && confirm('Delete this chat? This cannot be undone.')) h.onDelete(this.chatId);
+    };
     $('.history').onchange = (e) => h.onOpen(/** @type {HTMLSelectElement} */ (e.target).value);
     for (const b of root.querySelectorAll('.mode button')) b.addEventListener('click', () => this.chooseMode(b.getAttribute('data-mode')));
     this.sendBtn.onclick = () => (this.running ? h.onStop() : this.submit());

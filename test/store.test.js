@@ -50,3 +50,11 @@ test('sites round trip', async () => {
   await store.setSites([A]);
   assert.deepEqual(await store.getSites(), [A]);
 });
+
+test('deleteChat removes the chat and its list entry', async () => {
+  await store.saveChat(chat('c1', A, 1));
+  await store.saveChat(chat('c2', A, 2));
+  await store.deleteChat(A, 'c1');
+  assert.equal(await store.getChat('c1'), null);
+  assert.deepEqual((await store.listChats(A)).map((c) => c.id), ['c2']);
+});

@@ -73,6 +73,7 @@ chrome.runtime.onConnect.addListener((port) => {
       case 'mode': return session.setMode(m.mode);
       case 'open': return session.open(m.chatId);
       case 'new': return session.open();
+      case 'delete': return session.deleteChat(m.chatId);
     }
   });
   port.onDisconnect.addListener(() => {

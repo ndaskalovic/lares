@@ -315,3 +315,29 @@ test('large error results are capped too', async () => {
   await running;
   assert.ok(s.chat.messages[2].content[0].content.length <= 16100);
 });
+
+test('deleting the open chat switches to the most recent remaining one', async () => {
+  const { s, posts } = await setup([reply([text('a')]), reply([text('b')])]);
+  await s.send('first', null);
+  const first = s.chat.id;
+  await s.open();
+  await s.send('second', null);
+  const second = s.chat.id;
+  await s.deleteChat(second);
+  assert.equal(await store.getChat(second), null);
+  assert.equal(s.chat.id, first);
+  const state = posts.at(-1);
+  assert.equal(state.type, 'state');
+  assert.deepEqual(state.chats.map((c) => c.id), [first]);
+});
+
+test('deleting another chat keeps the open one', async () => {
+  const { s } = await setup([reply([text('a')]), reply([text('b')])]);
+  await s.send('first', null);
+  const first = s.chat.id;
+  await s.open();
+  await s.send('second', null);
+  await s.deleteChat(first);
+  assert.equal(await store.getChat(first), null);
+  assert.notEqual(s.chat.id, first);
+});

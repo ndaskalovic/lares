@@ -40,6 +40,7 @@ button.primary { background: var(--accent); border-color: var(--accent-strong); 
 header { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--bg2); border-bottom: 1px solid var(--border); }
 header .title { font-weight: bold; }
 header .model { color: var(--muted); font-size: 11px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+header .delete { display: flex; align-items: center; padding: 4px 6px; }
 header select { max-width: 110px; background: var(--bg); border: 1px solid var(--field-border); border-radius: 3px; }
 .mode { display: flex; }
 .mode button { border-radius: 0; padding: 2px 6px; }

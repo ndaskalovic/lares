@@ -81,6 +81,20 @@ export class Session {
     await this.save();
   }
 
+  /** Deletes a chat; deleting the open one switches to the most recent remaining chat. */
+  async deleteChat(id) {
+    if (id !== this.chat?.id) {
+      await this.store.deleteChat(this.origin, id);
+      return this.refresh();
+    }
+    if (this.running) {
+      this.stop();
+      await this.loop;
+    }
+    await this.store.deleteChat(this.origin, id);
+    await this.resume();
+  }
+
   /** Opens the most recent chat for this site. */
   async resume() {
     const [latest] = await this.store.listChats(this.origin);

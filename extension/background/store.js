@@ -63,6 +63,12 @@ export async function saveChat(chat) {
   await local().set({ [`chat:${chat.id}`]: chat, [`chats:${chat.origin}`]: list });
 }
 
+/** @param {string} origin @param {string} id */
+export async function deleteChat(origin, id) {
+  await local().remove(`chat:${id}`);
+  await put(`chats:${origin}`, (await listChats(origin)).filter((c) => c.id !== id));
+}
+
 /** @param {string} origin @returns {Promise<Note[]>} */
 export const getNotes = (origin) => get(`notes:${origin}`, []);
 
