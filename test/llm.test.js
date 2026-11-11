@@ -14,7 +14,7 @@ const collect = async (it) => { const out = []; for await (const x of it) out.pu
 const args = { system: [{ type: 'text', text: 'S' }], tools: [{ name: 't' }], messages: [{ role: 'user', content: 'hi' }] };
 
 test('buildBody anthropic', () => {
-  const b = buildBody({ provider: 'anthropic', model: 'claude-sonnet-5-5', ...args });
+  const b = buildBody({ provider: 'anthropic', model: 'claude-haiku-5-5', ...args });
   assert.deepEqual(b.cache_control, { type: 'ephemeral' });
   assert.deepEqual(b.thinking, { type: 'adaptive' });
   assert.deepEqual(b.output_config, { effort: 'medium' });
@@ -31,7 +31,7 @@ test('buildBody deepseek', () => {
 });
 
 test('providers list default models first', () => {
-  assert.equal(PROVIDERS.anthropic.models[0], 'claude-sonnet-5-5');
+  assert.equal(PROVIDERS.anthropic.models[0], 'claude-haiku-5-5');
   assert.equal(PROVIDERS.deepseek.models[0], 'deepseek-v4-pro');
 });
 

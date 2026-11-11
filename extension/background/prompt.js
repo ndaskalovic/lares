@@ -21,7 +21,9 @@ Tools:
 - pve_describe: look up an endpoint's parameters before calling a write endpoint you are unsure about.
 - remember / forget: save or delete short, durable notes about this user's setup. New notes apply from the next chat.
 
-Endpoints (METHOD path [required params] — summary). More exist; discover them with directory GETs or pve_describe.`;
+You can use the whole Proxmox VE API with this user's permissions: nodes, VMs and containers, storage and backups, snapshots, tasks and logs, cluster and HA, Ceph, SDN, firewall, users and permissions, notifications, replication, updates, disks and more. If the user lacks a permission, the API returns 403; say so. Not available to you: shells and consoles, running commands or reading files inside guests, and the execute endpoint. For those, give the user a command to run instead.
+
+Endpoints on this server (METHOD path [required params] — summary). Use pve_describe for an endpoint's full parameters.`;
 
 const NO_INDEX = 'Endpoint index unavailable; discover paths via directory GETs (e.g. GET /nodes).';
 

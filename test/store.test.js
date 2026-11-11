@@ -19,7 +19,7 @@ test('settings default and deep merge keys', async () => {
   const s = await store.getSettings();
   assert.equal(s.keys.deepseek, 'k');
   assert.equal(s.keys.anthropic, '');
-  assert.equal(s.models.anthropic, 'claude-sonnet-5-5');
+  assert.equal(s.models.anthropic, 'claude-haiku-5-5');
 });
 
 test('chats are listed per origin, newest first, without duplicates', async () => {

@@ -87,7 +87,8 @@ Bodies are sent as `application/x-www-form-urlencoded`, the same as the UI.
 **Endpoint index (in the cached system prompt). [call]** The index is generated at runtime from the node's own `/pve-docs/api-viewer/apidoc.js`. That file is served unauthenticated and always installed. This keeps the extension free of bundled data, and it always matches the server's version (8 or 9).
 - Parse it: slice from the first `[` to the closing `\n]\n;` and run `JSON.parse`.
 - Apply fixed exclude rules in code: ceph, sdn, notifications, firewall, mapping, acme, certificates, metrics, tfa/openid/domains/ticket, hardware, scan, subscription, replication, all console/shell/proxy, `execute`, and the guest agent except read-only info calls.
-- That yields about 200 endpoints. Write one line per endpoint: `GET /nodes/{node}/qemu/{vmid}/status/current: Get VM status (vmid*)`, with required params only, marked `*`.
+- Updated 2026-11-11 (user request: full API knowledge): the index lists every endpoint except those the guard blocks, about 580 on PVE 8.4 (≈40k chars, ≈11k tokens, cached). The curated exclude list below was dropped.
+- Originally: about 200 endpoints. Write one line per endpoint: `GET /nodes/{node}/qemu/{vmid}/status/current: Get VM status (vmid*)`, with required params only, marked `*`.
 - That's about 5–7k tokens.
 - Generation is deterministic, so the same server version always yields the same bytes and keeps the prompt cache warm. No storage cache is needed. **[call]**
 - Excluded endpoints stay callable. They're just not listed (the guard still applies).
@@ -202,7 +203,8 @@ messages: append-only; top-level cache_control {ephemeral} = automatic breakpoin
 ### Models **[user]** (user picks) / **[call]** (list and default)
 
 - Anthropic:
-  - `claude-sonnet-5-5` (default)
+  - `claude-haiku-5-5` (default, per user 2026-11-11)
+  - `claude-sonnet-5-5`
   - `claude-opus-5-5` (hard debugging)
   - `claude-haiku-5-5` (budget)
 - DeepSeek: `deepseek-v4-pro` (default), `deepseek-flash`.

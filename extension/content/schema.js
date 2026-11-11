@@ -1,8 +1,8 @@
 // @ts-check
 // Turns the node's own API schema (/pve-docs/api-viewer/apidoc.js) into a compact index and per-endpoint docs.
 
-const INDEX_EXCLUDE = /\/ceph|\/sdn|\/notifications|\/firewall|\/mapping|\/acme|\/certificates|\/metrics|\/access\/(tfa|openid|ticket|vncticket|password|domains)|\/hardware|\/scan|\/subscription|\/capabilities|vncshell|termproxy|spiceshell|vncproxy|vncwebsocket|spiceproxy|mtunnel|remote_migrate|\/execute|\/agent\/|\/cluster\/config|\/replication|\/aplinfo|\/wakeonlan|\/journal|\/query-url-metadata|\/query-oci|\/ha\/(groups|status\/manager|rules)|\/cluster\/jobs\/(realm-sync|schedule)|\/cloudinit\/dump|\/feature|\/sendkey|\/monitor|\/dbus-vmstate|\/interfaces|\/rrd$|\/apt\/(changelog|repositories|versions)|\/disks\/(lvm|lvmthin|zfs|directory)/;
-const INDEX_KEEP_AGENT = /\/agent\/(get-osinfo|network-get-interfaces|info|get-fsinfo)$/;
+// Endpoints the guard blocks (shells, consoles, execute, guest exec/file access, auth) are left out of the index.
+const INDEX_BLOCKED = /\/(execute|vncshell|termproxy|spiceshell|vncproxy|spiceproxy|vncwebsocket)$|\/mtunnel|\/agent\/(exec|exec-status|file-read|file-write|set-user-password)$|^\/access\/ticket/;
 const MAX_DESCRIBE = 6000;
 
 /**
@@ -32,10 +32,10 @@ function schemaEndpoints(tree) {
 
 const firstSentence = (d) => (d ?? '').trim().split('\n')[0].split(/(?<=\.)\s/)[0].replace(/\.$/, '');
 
-/** One line per curated endpoint: `METHOD path [required] — summary`. */
+/** One line per usable endpoint: `METHOD path [required] — summary`. */
 function buildIndex(tree) {
   return schemaEndpoints(tree)
-    .filter(({ path }) => !INDEX_EXCLUDE.test(path) || INDEX_KEEP_AGENT.test(path))
+    .filter(({ path }) => !INDEX_BLOCKED.test(path))
     .map(({ method, path, info }) => {
       const pathVars = new Set([...path.matchAll(/\{(\w+)\}/g)].map((m) => m[1]));
       const req = Object.entries(info.parameters?.properties ?? {})

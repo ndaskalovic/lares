@@ -43,7 +43,7 @@ Safari: see [docs/safari.md](docs/safari.md).
 
 ## How it keeps costs down
 
-The system prompt (rules plus a compact index of about 200 API endpoints built from your server's own schema) and the tool definitions never change within a chat, and history is append-only, so after the first message the large prefix is served from the provider's prompt cache. DeepSeek caches automatically.
+The system prompt (rules plus a one-line-per-endpoint index of your server's whole API, about 580 endpoints, built from its own schema) and the tool definitions never change within a chat, and history is append-only, so after the first message the large prefix is served from the provider's prompt cache. DeepSeek caches automatically.
 
 ## Development
 

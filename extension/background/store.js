@@ -10,7 +10,7 @@
 export const DEFAULT_SETTINGS = {
   provider: /** @type {'anthropic'|'deepseek'} */ ('anthropic'),
   keys: { anthropic: '', deepseek: '' },
-  models: { anthropic: 'claude-sonnet-5-5', deepseek: 'deepseek-v4-pro' },
+  models: { anthropic: 'claude-haiku-5-5', deepseek: 'deepseek-v4-pro' },
   mode: /** @type {'manual'|'auto'} */ ('manual'),
   consent: false,
 };

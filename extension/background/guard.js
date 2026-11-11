@@ -9,7 +9,7 @@ const BLOCKED_SEGMENTS = new Set(['execute', 'vncshell', 'termproxy', 'spiceshel
 const BLOCKED_AGENT = /\/agent\/(exec|exec-status|file-read|file-write|set-user-password)$/;
 const DESTRUCTIVE_LAST = new Set([
   'stop', 'reset', 'shutdown', 'reboot', 'suspend', 'rollback', 'migrate', 'remote_migrate', 'relocate',
-  'migrateall', 'stopall', 'suspendall', 'template', 'unlink', 'wipedisk', 'initgpt', 'resize', 'move_disk', 'move_volume',
+  'migrateall', 'stopall', 'suspendall', 'template', 'unlink', 'wipedisk', 'initgpt', 'resize', 'move_disk', 'move_volume', 'restart',
 ]);
 const DESTRUCTIVE_PARAMS = ['delete', 'purge', 'destroy-unreferenced-disks', 'force', 'skiplock', 'archive'];
 
@@ -56,7 +56,10 @@ export function classify(method, path, params = {}) {
     path.startsWith('/access/') ||
     (method === 'PUT' && path.endsWith('/apt/repositories')) ||
     /\/agent\/(shutdown|suspend-[a-z]+)$/.test(path) ||
-    /^\/nodes\/[^/]+\/(disks\/(zfs|lvm|lvmthin|directory)|ceph\/osd)$/.test(path);
+    /^\/nodes\/[^/]+\/(disks\/(zfs|lvm|lvmthin|directory)|ceph\/osd)$/.test(path) ||
+    // can cut off access or change cluster membership
+    (method === 'PUT' && path === '/cluster/sdn') || path.startsWith('/cluster/config') ||
+    /^\/nodes\/[^/]+\/(certificates\/|dns$|hosts$)/.test(path);
   return { cls: destructive ? 'destructive' : 'write' };
 }
 

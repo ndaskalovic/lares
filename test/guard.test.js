@@ -80,3 +80,16 @@ test('disk formatting endpoints are destructive', () => {
     assert.equal(classify('POST', p).cls, 'destructive', p);
   }
 });
+
+test('lockout-prone and cluster-changing writes are destructive', () => {
+  for (const [m, p] of [
+    ['PUT', '/cluster/sdn'],
+    ['POST', '/cluster/config'],
+    ['POST', '/cluster/config/join'],
+    ['POST', '/nodes/pve/certificates/custom'],
+    ['PUT', '/nodes/pve/dns'],
+    ['POST', '/nodes/pve/hosts'],
+    ['POST', '/nodes/pve/services/pveproxy/restart'],
+  ]) assert.equal(classify(m, p).cls, 'destructive', `${m} ${p}`);
+  assert.equal(classify('POST', '/cluster/sdn/vnets').cls, 'write');
+});

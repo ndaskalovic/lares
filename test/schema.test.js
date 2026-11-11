@@ -15,10 +15,10 @@ test('parseApidoc throws on unrelated files', () => {
   assert.throws(() => parseApidoc('console.log(1)'));
 });
 
-test('buildIndex lists curated endpoints one per line', () => {
+test('buildIndex lists every usable endpoint one per line', () => {
   const idx = buildIndex(tree);
   assert.match(idx, /^GET \/nodes\/\{node\}\/qemu\/\{vmid\}\/status\/current — /m);
-  assert.doesNotMatch(idx, /\/ceph/);
+  assert.match(idx, /^GET \/nodes\/\{node\}\/ceph\/status — /m);
   assert.doesNotMatch(idx, /agent\/exec/);
   assert.match(idx, /agent\/get-osinfo/);
   assert.match(idx, /^POST \/nodes\/\{node\}\/qemu \[vmid\] — /m);

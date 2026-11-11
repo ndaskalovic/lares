@@ -5,7 +5,7 @@ export const PROVIDERS = {
   anthropic: {
     label: 'Anthropic',
     base: 'https://api.anthropic.com',
-    models: ['claude-sonnet-5-5', 'claude-opus-5-5', 'claude-haiku-5-5'],
+    models: ['claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-5'],
     effort: 'medium',
     topCache: true,
   },
