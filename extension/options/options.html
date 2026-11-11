@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Lares settings</title>
+  <style>
+    :root { --bg: #fff; --bg2: #f5f5f5; --fg: #333; --muted: #666; --border: #cfcfcf; --accent: #3892d4; --accent-strong: #157fcc; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: hsl(0,0%,15%); --bg2: hsl(0,0%,20%); --fg: hsl(0,0%,95%); --muted: hsl(0,0%,65%); --border: hsl(0,0%,40%); --accent: hsl(205,100%,32%); --accent-strong: #4297d4; }
+    }
+    body { font: 13px/18px helvetica, arial, verdana, sans-serif; background: var(--bg); color: var(--fg); margin: 0; }
+    main { max-width: 640px; margin: 0 auto; padding: 24px 16px; }
+    h1 { font-size: 18px; margin: 0 0 16px; }
+    fieldset { border: 1px solid var(--border); border-radius: 3px; margin: 0 0 16px; padding: 10px 12px; background: var(--bg2); }
+    legend { font-weight: bold; padding: 0 4px; }
+    label { display: block; margin: 6px 0; }
+    input[type=password], input[type=text], select { font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 4px 6px; width: 100%; box-sizing: border-box; }
+    .hint { color: var(--muted); font-size: 12px; }
+    a { color: var(--accent-strong); }
+    button { font: inherit; padding: 5px 12px; border: 1px solid var(--border); border-radius: 3px; background: var(--bg2); color: inherit; cursor: pointer; }
+    button.primary { background: var(--accent); border-color: var(--accent-strong); color: #fff; }
+    .note { display: flex; gap: 6px; margin: 4px 0; }
+    .note input { flex: 1; }
+    #status { margin-left: 8px; color: var(--muted); }
+    blockquote { margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Lares settings</h1>
+
+  <fieldset>
+    <legend>AI provider</legend>
+    <label><input type="radio" name="provider" value="anthropic"> Anthropic</label>
+    <label><input type="radio" name="provider" value="deepseek"> DeepSeek</label>
+    <label>Anthropic API key <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Get a key</a>
+      <input type="password" id="key-anthropic" autocomplete="off"></label>
+    <label>DeepSeek API key <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener">Get a key</a>
+      <input type="password" id="key-deepseek" autocomplete="off"></label>
+    <label>Model <select id="model"></select></label>
+    <label id="custom-wrap" hidden>Custom model ID <input type="text" id="custom"></label>
+    <div class="hint">Keys are stored only in this browser's extension storage. A model change applies to new chats.</div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Default mode</legend>
+    <label><input type="radio" name="mode" value="manual"> Manual: ask before every change</label>
+    <label><input type="radio" name="mode" value="auto"> Auto: run changes without asking (destructive actions still ask)</label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Privacy</legend>
+    <blockquote>Lares sends your messages, and the Proxmox data it reads to answer them (such as VM names, configs, logs and task output), to the AI provider you choose (Anthropic or DeepSeek), using your API key. Nothing else leaves your browser. Your key, chats and notes are stored only in this browser's extension storage. Lares acts with your Proxmox permissions; in Auto mode it can make changes without asking (destructive actions still ask).</blockquote>
+    <label><input type="checkbox" id="consent"> I understand and agree</label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Memory notes</legend>
+    <div id="notes"></div>
+  </fieldset>
+
+  <button class="primary" id="save">Save</button><span id="status"></span>
+</main>
+<script type="module" src="options.js"></script>
+</body>
+</html>
