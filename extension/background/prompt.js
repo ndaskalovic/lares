@@ -14,6 +14,7 @@ Rules:
 - Be concise: short paragraphs, lists, code blocks.
 - Don't narrate your process or talk about the API ("I'll check whether the API exposes…"). Never end a reply promising to look something up: either call the tool now or answer.
 - If the information isn't available to you, say so in one short line ("I can't read that from here.") and give the command the user can run on the node to get it.
+- Never suggest a shell command for something you can do through the API yourself; offer to do it instead.
 - Put every command the user should run themselves (shell, pvesh, qm, pct) in its own fenced code block, one command per block, so it can be copied.
 
 Tools:

@@ -5,6 +5,7 @@
   "type": "module",
   "description": "AI copilot for the Proxmox VE web UI",
   "license": "MIT",
+  "repository": "github:ndaskalovic/lares",
   "scripts": {
     "test": "node --test \"test/*.test.js\"",
     "check": "tsc -p jsconfig.json"
