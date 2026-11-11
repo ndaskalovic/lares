@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Lares for Proxmox VE",
   "short_name": "Lares",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AI copilot for the Proxmox VE web UI. Bring your own Anthropic or DeepSeek API key.",
   "minimum_chrome_version": "116",
   "background": { "service_worker": "background/sw.js", "type": "module" },
