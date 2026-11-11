@@ -120,3 +120,23 @@ test('callModel sends required headers to the provider base', async () => {
   assert.equal(seen.init.headers['anthropic-version'], '2026-10-21');
   assert.equal(seen.init.headers['anthropic-dangerous-direct-browser-access'], 'true');
 });
+
+test('assemble tolerates truncated tool JSON', async () => {
+  const r = await assemble([
+    { type: 'message_start', message: { usage: {} } },
+    { type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 't9', name: 'pve', input: {} } },
+    { type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: '{"method":"GE' } },
+    { type: 'content_block_stop', index: 0 },
+    { type: 'message_delta', delta: { stop_reason: 'max_tokens' }, usage: {} },
+  ]);
+  assert.equal(r.stop_reason, 'max_tokens');
+  assert.deepEqual(r.content[0].input, {});
+});
+
+test('callModel calls onRetry before retrying', async () => {
+  let calls = 0;
+  let retries = 0;
+  const fetchFn = async () => (++calls === 1 ? errResponse(503) : okResponse());
+  await callModel({ ...callArgs(fetchFn), onRetry: () => retries++ });
+  assert.equal(retries, 1);
+});

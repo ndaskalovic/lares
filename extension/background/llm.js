@@ -104,7 +104,9 @@ export async function assemble(events, onText) {
       }
       case 'content_block_stop': {
         const b = content[e.index];
-        if (b.type === 'tool_use') b.input = JSON.parse(json[e.index] || '{}');
+        if (b.type === 'tool_use') {
+          try { b.input = JSON.parse(json[e.index] || '{}'); } catch { b.input = {}; } // truncated by max_tokens
+        }
         break;
       }
       case 'message_delta':
@@ -139,9 +141,9 @@ export function errorMessage(status, body) {
 /**
  * Streams one model response, retrying transient failures.
  * @param {{provider: keyof PROVIDERS, model: string, key: string, system: object[], tools: object[], messages: object[],
- *   onText?: (t: string) => void, signal?: AbortSignal, fetchFn?: typeof fetch}} a
+ *   onText?: (t: string) => void, onRetry?: () => void, signal?: AbortSignal, fetchFn?: typeof fetch}} a
  */
-export async function callModel({ provider, model, key, system, tools, messages, onText, signal, fetchFn = fetch }) {
+export async function callModel({ provider, model, key, system, tools, messages, onText, onRetry, signal, fetchFn = (...a) => fetch(...a) }) {
   const body = JSON.stringify(buildBody({ provider, model, system, tools, messages }));
   for (let attempt = 0; ; attempt++) {
     const res = await fetchFn(`${PROVIDERS[provider].base}/v1/messages`, {
@@ -161,6 +163,7 @@ export async function callModel({ provider, model, key, system, tools, messages,
       } catch (e) {
         if (!e.retryable || attempt >= MAX_RETRIES) throw e;
         await sleep(1000 * 2 ** attempt);
+        onRetry?.();
         continue;
       }
     }
@@ -168,5 +171,6 @@ export async function callModel({ provider, model, key, system, tools, messages,
     if (!RETRY_STATUS.has(res.status) || attempt >= MAX_RETRIES) throw new Error(errorMessage(res.status, errBody));
     const after = Number(res.headers.get('retry-after'));
     await sleep(after > 0 ? after * 1000 : 1000 * 2 ** attempt);
+    onRetry?.();
   }
 }

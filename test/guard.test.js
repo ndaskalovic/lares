@@ -38,13 +38,24 @@ test('unfilled placeholder is blocked with a placeholder reason', () => {
   assert.match(r.reason, /placeholder/);
 });
 
-for (const path of ['/nodes/../access', '/nodes?x=1', '/nodes#a', 'https://evil.example/x', 'nodes']) {
+for (const path of ['/nodes/../access', '/nodes?x=1', '/nodes#a', 'https://evil.example/x', 'nodes',
+  '/nodes/x/%2e%2e/access/ticket', '/nodes/pve/qemu/100/status/stop/x/%2E%2e', '/nodes//qemu', '/nodes/']) {
   test(`malformed path ${path} is blocked with a reason`, () => {
     const r = classify('GET', path);
     assert.equal(r.cls, 'blocked');
     assert.ok(r.reason && r.reason.length > 0);
   });
 }
+
+test('encoded volume ids and the root are allowed', () => {
+  assert.equal(classify('GET', '/nodes/pve/storage/local/content/local%3Aiso%2Fdebian.iso').cls, 'read');
+  assert.equal(classify('GET', '/').cls, 'read');
+});
+
+test('percent-encoded names are judged decoded', () => {
+  assert.equal(classify('POST', '/access/%74icket').cls, 'blocked');
+  assert.equal(classify('POST', '/nodes/pve/qemu/100/status/%73top').cls, 'destructive');
+});
 
 test('decide manual', () => {
   assert.deepEqual(['read', 'write', 'destructive', 'blocked'].map((c) => decide('manual', c)), ['run', 'confirm', 'confirm', 'block']);

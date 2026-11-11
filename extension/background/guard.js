@@ -25,8 +25,17 @@ export function classify(method, path, params = {}) {
   if (typeof path !== 'string' || !path.startsWith('/')) return blocked('path must start with / and be relative to /api2/json');
   if (path.includes('{')) return blocked('fill every placeholder in the path (e.g. {node}) with a real value');
   if (!PATH_RE.test(path)) return blocked('path contains characters that are not allowed (no query string, fragment or URL)');
-  const segments = path.split('/').filter(Boolean);
-  if (segments.includes('..') || segments.includes('.')) return blocked('path must not contain . or .. segments');
+  // fetch() decodes %2e to '.', so judge the decoded segments.
+  let segments;
+  try {
+    segments = path === '/' ? [] : path.slice(1).split('/').map(decodeURIComponent);
+  } catch {
+    return blocked('path has invalid percent-encoding');
+  }
+  if (segments.some((s) => s === '' || s === '.' || s === '..')) {
+    return blocked('path must not contain empty, . or .. segments or a trailing slash');
+  }
+  path = '/' + segments.join('/');
   if (segments.some((s) => BLOCKED_SEGMENTS.has(s) || s.startsWith('mtunnel'))) return blocked('shell, console and execute endpoints are not available to Lares');
   if (BLOCKED_AGENT.test(path)) return blocked('running commands or files inside guests is not available to Lares');
   if (path.startsWith('/access/ticket')) return blocked('authentication endpoints are not available to Lares');

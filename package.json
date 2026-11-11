@@ -6,7 +6,7 @@
   "description": "AI copilot for the Proxmox VE web UI",
   "license": "MIT",
   "scripts": {
-    "test": "node --test test/",
+    "test": "node --test \"test/*.test.js\"",
     "check": "tsc -p jsconfig.json"
   },
   "devDependencies": {
