@@ -17,6 +17,25 @@ function el(tag, cls, text) {
   return e;
 }
 
+/** Renders markdown into `target` and gives every code block a Copy button. */
+function setMarkdown(target, text) {
+  target.innerHTML = renderMarkdown(text);
+  for (const pre of target.querySelectorAll('pre')) {
+    const code = pre.querySelector('code')?.textContent ?? '';
+    const button = el('button', 'copy', 'Copy');
+    button.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(code.replace(/\n$/, ''));
+        button.textContent = 'Copied';
+      } catch {
+        button.textContent = 'Copy failed';
+      }
+      setTimeout(() => { button.textContent = 'Copy'; }, 1500);
+    };
+    pre.append(button);
+  }
+}
+
 const toolLabel = (name, input = {}) => {
   if (name === 'pve') return `${input.method} ${input.path}`;
   if (name === 'pve_describe') return `describe ${input.method} ${input.path}`;
@@ -183,7 +202,7 @@ class Panel {
           this.messages.append(el('div', 'msg user', b.text));
         } else if (b.type === 'text' && b.text) {
           const div = el('div', 'msg');
-          div.innerHTML = renderMarkdown(b.text);
+          setMarkdown(div, b.text);
           this.messages.append(div);
         } else if (b.type === 'tool_use') {
           this.addTool(b.id, b.name, b.input);
@@ -205,7 +224,7 @@ class Panel {
     this.currentText += text;
     this.renderTimer ??= setTimeout(() => {
       this.renderTimer = null;
-      if (this.current) this.current.innerHTML = renderMarkdown(this.currentText);
+      if (this.current) setMarkdown(this.current, this.currentText);
       this.scroll();
     }, 50);
   }
@@ -229,7 +248,7 @@ class Panel {
    * @returns {Promise<boolean>} whether the call may run
    */
   tool(m) {
-    if (this.current) this.current.innerHTML = renderMarkdown(this.currentText);
+    if (this.current) setMarkdown(this.current, this.currentText);
     this.current = null;
     const d = this.addTool(m.id, m.name, m.input);
     this.scroll();
@@ -285,7 +304,7 @@ class Panel {
 
   done(m) {
     this.cancelCards();
-    if (this.current) this.current.innerHTML = renderMarkdown(this.currentText);
+    if (this.current) setMarkdown(this.current, this.currentText);
     this.current = null;
     this.setRunning(false);
     if (m.long) {

@@ -53,7 +53,8 @@ header select { max-width: 110px; background: var(--bg); border: 1px solid var(-
 .msg table { border-collapse: collapse; margin: 0 0 6px; display: block; overflow-x: auto; }
 .msg th, .msg td { border: 1px solid var(--border); padding: 2px 6px; text-align: left; white-space: nowrap; }
 .msg th { background: var(--bg2); }
-.msg pre { background: var(--bg3); border: 1px solid var(--border); padding: 6px; overflow-x: auto; margin: 0 0 6px; }
+.msg pre { background: var(--bg3); border: 1px solid var(--border); padding: 6px; padding-right: 54px; position: relative; overflow-x: auto; margin: 0 0 6px; }
+.msg pre .copy { position: absolute; top: 4px; right: 4px; font: 11px/14px helvetica, arial, sans-serif; padding: 1px 6px; }
 code { font: 12px/16px monospace; }
 .msg a { color: var(--accent-strong); }
 .context { color: var(--muted); font-size: 11px; display: block; }
