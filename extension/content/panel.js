@@ -81,6 +81,10 @@ class Panel {
     /** Undecided confirm cards: each entry cancels its card. */
     this.cards = new Set();
     this.input.disabled = true; // until the first state arrives
+    // Activity indicator: a flickering hearth flame and what Lares is doing right now.
+    this.statusEl = el('div', 'status');
+    this.statusEl.innerHTML = '<svg class="flame" viewBox="0 0 24 32" aria-hidden="true"><path class="outer" d="M12 1C14 8 21 12 21 21a9 9 0 0 1-18 0c0-5 3-8 5-10 0 3 1 5 3 6 0-6 1-11 1-16z"/><path class="inner" d="M12 14c1 4 5 6 5 10a5 5 0 0 1-10 0c0-3 2-5 3-6 0 2 1 3 2 3 0-3-.5-5 0-7z"/></svg><span class="label"></span>';
+    this.statusLabel = this.statusEl.querySelector('.label');
     this.running = false;
     this.current = null;
     this.currentText = '';
@@ -168,6 +172,24 @@ class Panel {
   setRunning(running) {
     this.running = running;
     this.sendBtn.textContent = running ? 'Stop' : 'Send';
+    this.status(running ? 'Thinking' : null);
+  }
+
+  /** Shows the activity indicator at the end of the conversation, or hides it with null. */
+  status(label) {
+    if (!label) return this.statusEl.remove();
+    this.statusLabel.textContent = label;
+    this.messages.append(this.statusEl);
+    this.scroll();
+  }
+
+  /** Renders the streamed bubble one last time and stops its caret. */
+  finishCurrent() {
+    if (this.current) {
+      setMarkdown(this.current, this.currentText);
+      this.current.classList.remove('streaming');
+    }
+    this.current = null;
   }
 
   /** Renders a full state from the service worker (chat history, chats, mode, readiness). */
@@ -216,8 +238,9 @@ class Panel {
 
   /** Appends streamed assistant text, re-rendering markdown at most every 50 ms. */
   delta(text) {
+    this.status(null);
     if (!this.current) {
-      this.current = el('div', 'msg');
+      this.current = el('div', 'msg streaming');
       this.currentText = '';
       this.messages.append(this.current);
     }
@@ -233,6 +256,7 @@ class Panel {
   reset() {
     this.current?.remove();
     this.current = null;
+    this.status('Thinking');
   }
 
   addTool(id, name, input) {
@@ -248,12 +272,12 @@ class Panel {
    * @returns {Promise<boolean>} whether the call may run
    */
   tool(m) {
-    if (this.current) setMarkdown(this.current, this.currentText);
-    this.current = null;
+    this.finishCurrent();
     const d = this.addTool(m.id, m.name, m.input);
-    this.scroll();
-    if (m.decision === 'block') return Promise.resolve(false);
-    if (m.decision !== 'confirm') return Promise.resolve(true);
+    const running = `Running ${toolLabel(m.name, m.input)}`;
+    if (m.decision === 'block') { this.status('Thinking'); return Promise.resolve(false); }
+    if (m.decision !== 'confirm') { this.status(running); return Promise.resolve(true); }
+    this.status(null); // the card is the indicator while waiting for the user
     const card = el('div', `card ${m.cls === 'destructive' ? 'destructive' : 'write'}`);
     card.append(el('div', 'head', m.cls === 'destructive' ? 'Approve this destructive action?' : 'Approve this change?'));
     if (m.reason) card.append(el('div', 'reason', m.reason));
@@ -279,6 +303,7 @@ class Panel {
       const decide = (ok, label = ok ? 'Approved' : 'Denied') => {
         this.cards.delete(cancel);
         actions.replaceWith(el('div', 'decided', label));
+        if (this.running) this.status(ok ? running : 'Thinking');
         resolve(ok);
       };
       const cancel = () => decide(false, 'Cancelled');
@@ -300,12 +325,12 @@ class Panel {
     d.querySelector('pre')?.remove();
     const text = String(content);
     d.append(el('pre', '', text.length > RESULT_DISPLAY_CHARS ? `${text.slice(0, RESULT_DISPLAY_CHARS)}…` : text));
+    if (this.running && !this.cards.size) this.status('Thinking');
   }
 
   done(m) {
     this.cancelCards();
-    if (this.current) setMarkdown(this.current, this.currentText);
-    this.current = null;
+    this.finishCurrent();
     this.setRunning(false);
     if (m.long) {
       const b = el('button', '', 'Continue in a new chat with a summary');

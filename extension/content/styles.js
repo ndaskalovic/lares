@@ -59,6 +59,29 @@ code { font: 12px/16px monospace; }
 .msg a { color: var(--accent-strong); }
 .context { color: var(--muted); font-size: 11px; display: block; }
 
+.msg.streaming > :last-child::after, .msg.streaming:empty::after {
+  content: ''; display: inline-block; width: 7px; height: 13px; margin-left: 3px; vertical-align: -2px; border-radius: 2px;
+  background: #f08a24; box-shadow: 0 0 6px #f08a24; animation: ember 1.1s ease-in-out infinite;
+}
+@keyframes ember { 0%, 100% { opacity: 1; } 50% { opacity: .25; box-shadow: none; } }
+
+.status { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; overflow: hidden; }
+.status .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.status .label::after { content: ''; animation: dots 1.4s steps(4) infinite; }
+@keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+.flame { width: 14px; height: 19px; flex: none; transform-origin: 50% 100%; animation: flicker 0.9s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 3px rgba(240,138,36,.7)); }
+.flame .outer { fill: #f08a24; }
+.flame .inner { fill: #ffd36e; transform-origin: 50% 100%; animation: flicker-inner 0.6s ease-in-out infinite alternate; }
+@keyframes flicker {
+  0% { transform: scale(1, 1) skewX(0deg); }
+  35% { transform: scale(.94, 1.08) skewX(-3deg); }
+  70% { transform: scale(1.04, .95) skewX(2deg); }
+  100% { transform: scale(.97, 1.04) skewX(-1deg); }
+}
+@keyframes flicker-inner { from { transform: scaleY(.85); opacity: .8; } to { transform: scaleY(1.1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .flame, .flame .inner, .status .label::after, .msg.streaming > :last-child::after { animation: none; } }
+
 details.tool { border: 1px solid var(--border); border-radius: 3px; background: var(--bg3); }
 details.tool summary { padding: 3px 7px; cursor: pointer; font: 12px/16px monospace; color: var(--muted); }
 details.tool.err summary { color: var(--danger); }
