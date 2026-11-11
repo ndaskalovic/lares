@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Lares for Proxmox VE",
+  "short_name": "Lares",
+  "version": "0.1.0",
+  "description": "AI copilot for the Proxmox VE web UI. Bring your own Anthropic or DeepSeek API key.",
+  "minimum_chrome_version": "116",
+  "background": { "service_worker": "background/sw.js", "type": "module" },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png" }
+  },
+  "options_ui": { "page": "options/options.html", "open_in_tab": true },
+  "permissions": ["storage", "unlimitedStorage", "scripting", "activeTab"],
+  "host_permissions": ["https://api.anthropic.com/*", "https://api.deepseek.com/*"],
+  "optional_host_permissions": ["https://*/*"],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

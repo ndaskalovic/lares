@@ -1,0 +1,16 @@
+{
+  "name": "lares",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AI copilot for the Proxmox VE web UI",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test test/",
+    "check": "tsc -p jsconfig.json"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.0",
+    "typescript": "^5.9.0"
+  }
+}
