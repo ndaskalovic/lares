@@ -137,10 +137,10 @@ test('remember stores a note without changing this chat', async () => {
     reply([use('r', 'remember', { note: 'VM 105 is Plex' })], 'tool_use'),
     reply([text('noted')]),
   ]);
-  const memo = s.chat.memo;
+  const system = structuredClone(s.chat.system);
   await s.send('remember 105 is plex', null);
   assert.match(s.chat.messages[2].content[0].content, /next chat/);
-  assert.equal(s.chat.memo, memo);
+  assert.deepEqual(s.chat.system, system);
   assert.deepEqual((await store.getNotes(ORIGIN)).map((n) => n.text), ['VM 105 is Plex']);
 });
 
@@ -239,4 +239,25 @@ test('resume opens the most recent chat', async () => {
   const fresh = new Session({ post: () => {}, origin: ORIGIN, index: 'IDX', env: {} });
   await fresh.resume();
   assert.equal(fresh.chat.id, id);
+});
+
+test('a chat keeps the system prompt it started with, even after an update', async () => {
+  const { s, calls } = await setup([reply([text('one')])]);
+  await s.send('hi', null);
+  const before = calls[0].system;
+  const updated = new Session({ post: () => {}, origin: ORIGIN, index: 'NEW INDEX', env: {}, deps: { callModel: async (a) => { calls.push(structuredClone({ system: a.system, messages: a.messages })); return reply([text('two')]); } } });
+  await updated.resume();
+  await updated.send('again', null);
+  assert.deepEqual(calls.at(-1).system, before);
+});
+
+test('legacy chats without a frozen system drop thinking blocks once', async () => {
+  const { s } = await setup([]);
+  await store.saveChat({ id: 'legacy', origin: ORIGIN, provider: 'anthropic', model: 'm', memo: 'old memo', createdAt: 1, updatedAt: 1, messages: [
+    { role: 'user', content: [text('hi')] },
+    { role: 'assistant', content: [{ type: 'thinking', thinking: 't', signature: 'sig' }, text('hello')] },
+  ] });
+  await s.open('legacy');
+  assert.deepEqual(s.chat.messages[1].content, [text('hello')]);
+  assert.ok(s.chat.system[1].text.includes('old memo'));
 });

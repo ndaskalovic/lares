@@ -2,7 +2,7 @@
 // Thin wrapper over chrome.storage.local. Only the service worker and extension pages use it.
 
 /**
- * @typedef {{id: string, origin: string, provider: 'anthropic'|'deepseek', model: string, memo: string,
+ * @typedef {{id: string, origin: string, provider: 'anthropic'|'deepseek', model: string, system: object[], memo?: string,
  *   createdAt: number, updatedAt: number, messages: any[]}} Chat
  * @typedef {{id: string, text: string}} Note
  */

@@ -59,6 +59,7 @@ export class Session {
       await this.loop;
     }
     this.chat = (chatId && (await this.store.getChat(chatId))) || (await this.newChat());
+    if (!this.chat.system) await this.upgradeLegacy();
     // A turn interrupted mid-tool (e.g. the browser closed) leaves tool_use blocks without results.
     const uses = this.chat.messages.at(-1)?.role === 'assistant' ? this.chat.messages.at(-1).content.filter((b) => b.type === 'tool_use') : [];
     if (uses.length) {
@@ -66,6 +67,17 @@ export class Session {
       await this.save();
     }
     await this.refresh();
+  }
+
+  /** Chats from before the system prompt was frozen: their thinking is bound to an unknown prompt, so drop it once. */
+  async upgradeLegacy() {
+    const chat = this.chat;
+    chat.system = buildSystem(this.index, chat.memo ?? memoText({ ...this.env, origin: this.origin, notes: [] }));
+    delete chat.memo;
+    for (const m of chat.messages) {
+      if (m.role === 'assistant') m.content = m.content.filter((b) => b.type !== 'thinking' && b.type !== 'redacted_thinking');
+    }
+    await this.save();
   }
 
   /** Opens the most recent chat for this site. */
@@ -80,7 +92,8 @@ export class Session {
     const now = Date.now();
     return {
       id: crypto.randomUUID(), origin: this.origin, provider: s.provider, model: s.models[s.provider],
-      memo: memoText({ ...this.env, origin: this.origin, notes }), createdAt: now, updatedAt: now, messages: [],
+      // Frozen for the chat's lifetime: replayed thinking blocks are bound to this exact system prompt.
+      system: buildSystem(this.index, memoText({ ...this.env, origin: this.origin, notes })), createdAt: now, updatedAt: now, messages: [],
     };
   }
 
@@ -163,7 +176,7 @@ export class Session {
     const s = await this.store.getSettings();
     return this.callModel({
       provider: this.chat.provider, model: this.chat.model, key: s.keys[this.chat.provider],
-      system: buildSystem(this.index, this.chat.memo), tools: TOOLS, messages, onText,
+      system: this.chat.system, tools: TOOLS, messages, onText,
       onRetry: () => this.post({ type: 'reset' }), signal: this.abort?.signal,
     });
   }
