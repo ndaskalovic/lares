@@ -3,7 +3,7 @@
   "name": "Lares for Proxmox VE",
   "short_name": "Lares",
   "version": "0.2.0",
-  "description": "AI copilot for the Proxmox VE web UI. Works with an Anthropic or DeepSeek API key.",
+  "description": "An AI assistant in the Proxmox VE UI. Check, debug and manage your server by chatting. Works with Anthropic or DeepSeek.",
   "minimum_chrome_version": "116",
   "background": { "service_worker": "background/sw.js", "type": "module" },
   "action": {

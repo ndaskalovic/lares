@@ -1,6 +1,8 @@
 # Lares for Proxmox VE
 
-An AI copilot inside the Proxmox VE web UI. It reads and changes your server through the Proxmox API with **your own login**: nothing more than you can do, and every change asks first unless you choose Auto mode (destructive actions always ask). Works with an Anthropic or DeepSeek API key.
+An AI assistant built into the Proxmox VE web UI. Ask it to check on your server, debug problems, or make changes: start and stop VMs and containers, manage storage, snapshots and backups, and more. It uses your Proxmox login and asks before changing anything.
+
+Works with an Anthropic or DeepSeek API key.
 
 ![Lares docked in the Proxmox VE UI](.github/screenshot.jpg)
 
