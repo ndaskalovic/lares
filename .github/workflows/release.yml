@@ -33,6 +33,12 @@ jobs:
         run: |
           xcrun safari-web-extension-packager extension --project-location safari --app-name Lares \
             --bundle-identifier io.github.ndaskalovic.lares --swift --macos-only --copy-resources --no-open --force
+      - name: Prefix the extension's bundle ID with the app's
+        run: |
+          pbx=$(find safari -name project.pbxproj | head -1)
+          grep -o 'PRODUCT_BUNDLE_IDENTIFIER = [^;]*' "$pbx" | sort -u
+          perl -pi -e 's/(PRODUCT_BUNDLE_IDENTIFIER = )(?!io\.github\.ndaskalovic\.lares;)[^;]+;/$1io.github.ndaskalovic.lares.Extension;/' "$pbx"
+          grep -o 'PRODUCT_BUNDLE_IDENTIFIER = [^;]*' "$pbx" | sort -u
       - name: Build unsigned app
         run: |
           project=$(find safari -name '*.xcodeproj' -maxdepth 3 | head -1)
