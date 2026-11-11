@@ -22,7 +22,7 @@ export function installFakeChrome() {
         for (const id of filter?.ids ?? [...registered.keys()]) registered.delete(id);
       },
       async getRegisteredContentScripts() { return [...registered.values()]; },
-      async executeScript(opts) { executed.push(opts); },
+      async executeScript(opts) { executed.push(opts); return opts.func ? [{ result: false }] : []; },
     },
     permissions: {
       async contains({ origins }) { return origins.every((o) => granted.has(o)); },

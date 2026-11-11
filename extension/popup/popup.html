@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font: 13px helvetica, arial, verdana, sans-serif; margin: 0; padding: 12px; width: 260px; color: #333; background: #fff; }
+    h1 { font-size: 14px; margin: 0 0 8px; }
+    #origin { color: #666; word-break: break-all; margin-bottom: 10px; }
+    button { font: inherit; padding: 5px 10px; border: 1px solid #cfcfcf; border-radius: 3px; background: #f5f5f5; cursor: pointer; }
+    button.primary { background: #3892d4; border-color: #157fcc; color: #fff; }
+    .row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+    a { color: #157fcc; cursor: pointer; }
+    @media (prefers-color-scheme: dark) {
+      body { background: hsl(0,0%,15%); color: hsl(0,0%,95%); }
+      #origin { color: hsl(0,0%,70%); }
+      button { background: hsl(0,0%,20%); border-color: hsl(0,0%,40%); color: inherit; }
+      a { color: #4297d4; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Lares</h1>
+  <div id="origin"></div>
+  <div class="row" id="actions"></div>
+  <a id="settings">Settings</a>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
