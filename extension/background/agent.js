@@ -52,10 +52,26 @@ export class Session {
     this.pending = new Map();
   }
 
-  /** Opens a saved chat, or a new one. */
+  /** Opens a saved chat, or a new one, stopping any running turn first. */
   async open(chatId) {
+    if (this.running) {
+      this.stop();
+      await this.loop;
+    }
     this.chat = (chatId && (await this.store.getChat(chatId))) || (await this.newChat());
+    // A turn interrupted mid-tool (e.g. the browser closed) leaves tool_use blocks without results.
+    const uses = this.chat.messages.at(-1)?.role === 'assistant' ? this.chat.messages.at(-1).content.filter((b) => b.type === 'tool_use') : [];
+    if (uses.length) {
+      pushUser(this.chat.messages, uses.map((u) => toolResult(u.id, 'Interrupted; the result is unknown.', true)));
+      await this.save();
+    }
     await this.refresh();
+  }
+
+  /** Opens the most recent chat for this site. */
+  async resume() {
+    const [latest] = await this.store.listChats(this.origin);
+    await this.open(latest?.id);
   }
 
   async newChat() {
@@ -77,9 +93,10 @@ export class Session {
     const setupHint = !s.consent
       ? 'Open settings to review the privacy notice and add your API key.'
       : !key ? `Add your ${PROVIDERS[this.chat.provider].label} API key in settings.` : undefined;
+    // While a turn runs, leave the rendered conversation (and any confirm card) alone.
     this.post({
-      type: 'state', chat: { id: this.chat.id, messages: this.chat.messages }, chats: await this.store.listChats(this.origin),
-      mode: this.mode, model: this.chat.model, ready: !setupHint, setupHint,
+      type: 'state', ...(this.running ? {} : { chat: { id: this.chat.id, messages: this.chat.messages } }),
+      chats: await this.store.listChats(this.origin), mode: this.mode, model: this.chat.model, ready: !setupHint, setupHint,
     });
   }
 
@@ -94,9 +111,15 @@ export class Session {
   }
 
   /** @param {string} text @param {string|null} context */
-  async send(text, context) {
-    if (this.running) return;
+  send(text, context) {
+    if (this.running) return this.loop;
     this.running = true;
+    this.loop = this.turn(text, context);
+    return this.loop;
+  }
+
+  /** One user turn: model calls and tool calls until the model stops. */
+  async turn(text, context) {
     this.stopped = false;
     this.abort = new AbortController();
     const chat = this.chat;
@@ -114,7 +137,13 @@ export class Session {
         if (!uses.length) break;
         const reason = res.content.findLast((b) => b.type === 'text')?.text ?? '';
         const results = [];
-        for (const u of uses) results.push(await this.runTool(u, res.stop_reason, reason));
+        for (const u of uses) {
+          try {
+            results.push(await this.runTool(u, res.stop_reason, reason));
+          } catch (e) {
+            results.push(toolResult(u.id, `Tool failed: ${e.message}`, true));
+          }
+        }
         pushUser(chat.messages, results);
         await this.save();
         if (res.stop_reason !== 'tool_use') break;

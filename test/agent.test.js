@@ -178,3 +178,65 @@ test('summarize starts a new chat seeded with the summary', async () => {
   assert.match(s.chat.messages[0].content[0].text, /^Summary of the previous chat:\nSUMMARY/);
   assert.equal((await store.getChat(oldId)).messages.length, 2);
 });
+
+test('a throwing tool becomes an error result instead of breaking the chat', async () => {
+  const { s } = await setup([
+    reply([use('r1', 'remember', { note: 'x' }), use('r2', 'pve', { method: 'GET', path: '/nodes' })], 'tool_use'),
+    reply([text('ok')]),
+  ]);
+  const realAdd = store.addNote;
+  s.store = { ...store, addNote: async () => { throw new Error('disk full'); } };
+  const running = s.send('go', null);
+  await new Promise((r) => setTimeout(r, 5));
+  s.toolResult('r2', '[]', false);
+  await running;
+  const results = s.chat.messages[2].content;
+  assert.deepEqual(results.map((r) => r.tool_use_id), ['r1', 'r2']);
+  assert.match(results[0].content, /^ERROR: .*disk full/);
+  s.store = { ...store, addNote: realAdd };
+});
+
+test('opening a chat repairs a dangling tool_use', async () => {
+  const { s } = await setup([]);
+  await store.saveChat({ ...s.chat, id: 'dangling', messages: [
+    { role: 'user', content: [text('hi')] },
+    { role: 'assistant', content: [use('d1', 'pve', { method: 'GET', path: '/nodes' })] },
+  ] });
+  await s.open('dangling');
+  const last = s.chat.messages.at(-1);
+  assert.equal(last.role, 'user');
+  assert.equal(last.content[0].tool_use_id, 'd1');
+  assert.equal(last.content[0].is_error, true);
+});
+
+test('opening another chat while running stops the current turn first', async () => {
+  const { s, posts } = await setup([reply([use('p', 'pve', { method: 'POST', path: '/nodes/pve/qemu/100/status/start' })], 'tool_use')]);
+  const running = s.send('start', null);
+  await nextTool(posts);
+  const oldId = s.chat.id;
+  await s.open();
+  await running;
+  assert.notEqual(s.chat.id, oldId);
+  assert.equal(s.running, false);
+  assert.match((await store.getChat(oldId)).messages.at(-1).content[0].content, /Stopped by user/);
+});
+
+test('settings refresh while running does not resend the chat', async () => {
+  const { s, posts } = await setup([reply([use('p', 'pve', { method: 'POST', path: '/nodes/pve/qemu/100/status/start' })], 'tool_use'), reply([text('ok')])]);
+  const running = s.send('start', null);
+  await nextTool(posts);
+  await s.refresh();
+  assert.equal(posts.at(-1).type, 'state');
+  assert.equal(posts.at(-1).chat, undefined);
+  s.toolResult('p', 'ok', false);
+  await running;
+});
+
+test('resume opens the most recent chat', async () => {
+  const { s } = await setup([reply([text('hello')])]);
+  await s.send('hi', null);
+  const id = s.chat.id;
+  const fresh = new Session({ post: () => {}, origin: ORIGIN, index: 'IDX', env: {} });
+  await fresh.resume();
+  assert.equal(fresh.chat.id, id);
+});

@@ -50,6 +50,9 @@ header select { max-width: 110px; background: var(--bg); border: 1px solid var(-
 .msg p { margin: 0 0 6px; }
 .msg p:last-child { margin-bottom: 0; }
 .msg ul, .msg ol { margin: 0 0 6px; padding-left: 20px; }
+.msg table { border-collapse: collapse; margin: 0 0 6px; display: block; overflow-x: auto; }
+.msg th, .msg td { border: 1px solid var(--border); padding: 2px 6px; text-align: left; white-space: nowrap; }
+.msg th { background: var(--bg2); }
 .msg pre { background: var(--bg3); border: 1px solid var(--border); padding: 6px; overflow-x: auto; margin: 0 0 6px; }
 code { font: 12px/16px monospace; }
 .msg a { color: var(--accent-strong); }

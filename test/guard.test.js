@@ -64,3 +64,19 @@ test('decide manual', () => {
 test('decide auto', () => {
   assert.deepEqual(['read', 'write', 'destructive', 'blocked'].map((c) => decide('auto', c)), ['run', 'run', 'confirm', 'block']);
 });
+
+test('encoded slashes cannot hide blocked or destructive endpoints', () => {
+  assert.equal(classify('POST', '/nodes/pve%2Fexecute').cls, 'blocked');
+  assert.equal(classify('POST', '/nodes/pve/qemu/100/status%2Fstop').cls, 'destructive');
+});
+
+test('non-object params are blocked', () => {
+  assert.equal(classify('POST', '/nodes/pve/qemu/100/config', /** @type {any} */ ('delete=net0')).cls, 'blocked');
+  assert.equal(classify('POST', '/nodes/pve/qemu/100/config', /** @type {any} */ (['a'])).cls, 'blocked');
+});
+
+test('disk formatting endpoints are destructive', () => {
+  for (const p of ['/nodes/pve/disks/zfs', '/nodes/pve/disks/lvm', '/nodes/pve/disks/lvmthin', '/nodes/pve/disks/directory', '/nodes/pve/ceph/osd']) {
+    assert.equal(classify('POST', p).cls, 'destructive', p);
+  }
+});

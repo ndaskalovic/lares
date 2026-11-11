@@ -21,8 +21,17 @@ async function unregister(ids) {
   if (present.length) await chrome.scripting.unregisterContentScripts({ ids: present });
 }
 
+// The permission grant and the popup's message both enable the same site at once; run them one at a time.
+let queue = Promise.resolve();
+
 /** @param {string} origin @param {number} [tabId] inject into this already-open tab too */
-export async function enableSite(origin, tabId) {
+export function enableSite(origin, tabId) {
+  const run = queue.then(() => enable(origin, tabId));
+  queue = run.catch(() => {});
+  return run;
+}
+
+async function enable(origin, tabId) {
   const scripts = scriptsFor(origin);
   await unregister(scripts.map((s) => s.id));
   await chrome.scripting.registerContentScripts(scripts);

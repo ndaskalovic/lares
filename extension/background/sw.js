@@ -49,14 +49,20 @@ chrome.runtime.onConnect.addListener((port) => {
   const origin = port.sender?.url ? new URL(port.sender.url).origin : '';
   /** @type {Session|null} */
   let session = null;
+  /** @type {Promise<void>|null} resolves once the session for this port is ready */
+  let ready = null;
   const post = (m) => { try { port.postMessage(m); } catch { /* panel closed */ } };
   port.onMessage.addListener(async (m) => {
     if (m.type === 'hello') {
-      if (!(await getSites()).includes(origin)) return port.disconnect();
-      session = new Session({ post, origin, index: m.index, env: m.env });
-      sessions.add(session);
-      return session.open();
+      ready = (async () => {
+        if (!(await getSites()).includes(origin)) return port.disconnect();
+        session = new Session({ post, origin, index: m.index, env: m.env });
+        sessions.add(session);
+        await session.resume();
+      })();
+      return ready;
     }
+    await ready; // messages sent right after hello wait for the session
     if (!session) return;
     switch (m.type) {
       case 'send': return session.send(m.text, m.context);

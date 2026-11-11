@@ -59,6 +59,9 @@ class Panel {
     this.noticeEl = $('.notice');
     /** @type {Map<string, HTMLDetailsElement>} */
     this.tools = new Map();
+    /** Undecided confirm cards: each entry cancels its card. */
+    this.cards = new Set();
+    this.input.disabled = true; // until the first state arrives
     this.running = false;
     this.current = null;
     this.currentText = '';
@@ -152,10 +155,6 @@ class Panel {
   setState(s) {
     this.showMode(s.mode);
     this.$('.model').textContent = s.model;
-    const history = /** @type {HTMLSelectElement} */ (this.$('.history'));
-    history.replaceChildren(...(s.chats.some((c) => c.id === s.chat.id) ? [] : [new Option('New chat', s.chat.id)]),
-      ...s.chats.map((c) => new Option(c.title, c.id)));
-    history.value = s.chat.id;
     this.input.disabled = !s.ready;
     this.input.placeholder = s.ready ? 'Ask Lares about your Proxmox server…' : s.setupHint;
     if (!s.ready) {
@@ -163,6 +162,13 @@ class Panel {
       b.onclick = () => chrome.runtime.sendMessage({ type: 'openOptions' });
       this.notice(s.setupHint, b);
     } else this.notice(this.indexNotice ?? null);
+    if (!s.chat) return; // mid-turn refresh: keep the live conversation
+    const history = /** @type {HTMLSelectElement} */ (this.$('.history'));
+    history.replaceChildren(...(s.chats.some((c) => c.id === s.chat.id) ? [] : [new Option('New chat', s.chat.id)]),
+      ...s.chats.map((c) => new Option(c.title, c.id)));
+    history.value = s.chat.id;
+    this.cancelCards();
+    this.setRunning(false);
     this.renderHistory(s.chat.messages);
   }
 
@@ -251,13 +257,21 @@ class Panel {
     d.before(card);
     this.scroll();
     return new Promise((resolve) => {
-      const decide = (ok) => {
-        actions.replaceWith(el('div', 'decided', ok ? 'Approved' : 'Denied'));
+      const decide = (ok, label = ok ? 'Approved' : 'Denied') => {
+        this.cards.delete(cancel);
+        actions.replaceWith(el('div', 'decided', label));
         resolve(ok);
       };
+      const cancel = () => decide(false, 'Cancelled');
+      this.cards.add(cancel);
       approve.onclick = () => decide(true);
       deny.onclick = () => decide(false);
     });
+  }
+
+  /** A stopped or lost turn must not leave live Approve buttons behind. */
+  cancelCards() {
+    for (const cancel of [...this.cards]) cancel();
   }
 
   toolDone({ id, content, isError }) {
@@ -270,6 +284,7 @@ class Panel {
   }
 
   done(m) {
+    this.cancelCards();
     if (this.current) this.current.innerHTML = renderMarkdown(this.currentText);
     this.current = null;
     this.setRunning(false);
@@ -287,7 +302,8 @@ class Panel {
 
   /** The connection to the service worker dropped. */
   lost() {
-    if (this.running) this.error('Connection to Lares was lost. Send again to retry.');
+    this.cancelCards();
+    if (this.running) this.error('Connection to Lares was lost. Send your message again to reconnect.');
     this.setRunning(false);
   }
 

@@ -17,7 +17,11 @@ export function installFakeChrome() {
       },
     },
     scripting: {
-      async registerContentScripts(scripts) { for (const s of scripts) registered.set(s.id, s); },
+      async registerContentScripts(scripts) {
+        await null;
+        for (const s of scripts) if (registered.has(s.id)) throw new Error(`Duplicate script ID '${s.id}'`);
+        for (const s of scripts) registered.set(s.id, s);
+      },
       async unregisterContentScripts(filter) {
         for (const id of filter?.ids ?? [...registered.keys()]) registered.delete(id);
       },

@@ -18,7 +18,10 @@
 
     const panel = new Panel({
       onToggle: (open) => (open ? connect() : disconnect()),
-      onSend: (text) => send({ type: 'send', text, context: selectionFromHash(location.hash) }),
+      onSend: async (text) => {
+        if (!port) await connect();
+        send({ type: 'send', text, context: selectionFromHash(location.hash) });
+      },
       onStop: () => send({ type: 'stop' }),
       onNew: () => send({ type: 'new' }),
       onOpen: (chatId) => send({ type: 'open', chatId }),
@@ -40,6 +43,7 @@
     }
 
     async function connect() {
+      if (port) return;
       await loadSchema();
       const env = { user: readTicket(document.cookie)?.user, version: await client.version().catch(() => undefined) };
       port = chrome.runtime.connect({ name: 'lares' });

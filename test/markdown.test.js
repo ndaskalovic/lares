@@ -36,3 +36,14 @@ test('headings and paragraphs', () => {
 test('attribute injection through link text or url is escaped', () => {
   assert.doesNotMatch(md('[a](https://x.example/"onmouseover="alert(1))'), /"onmouseover="/);
 });
+
+test('tables', () => {
+  assert.equal(
+    md('| Device | Size |\n|---|---:|\n| sda | **16 TB** |\n| sdb | 1 TB |'),
+    '<table><thead><tr><th>Device</th><th>Size</th></tr></thead><tbody><tr><td>sda</td><td><strong>16 TB</strong></td></tr><tr><td>sdb</td><td>1 TB</td></tr></tbody></table>',
+  );
+});
+
+test('a lone pipe line is not a table', () => {
+  assert.equal(md('a | b'), '<p>a | b</p>');
+});

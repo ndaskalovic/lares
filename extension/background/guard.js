@@ -35,7 +35,10 @@ export function classify(method, path, params = {}) {
   if (segments.some((s) => s === '' || s === '.' || s === '..')) {
     return blocked('path must not contain empty, . or .. segments or a trailing slash');
   }
+  // Judge the decoded path re-split, so an encoded slash can't hide a segment.
   path = '/' + segments.join('/');
+  segments = path.split('/').filter(Boolean);
+  if (params == null || typeof params !== 'object' || Array.isArray(params)) return blocked('params must be an object of name/value pairs');
   if (segments.some((s) => BLOCKED_SEGMENTS.has(s) || s.startsWith('mtunnel'))) return blocked('shell, console and execute endpoints are not available to Lares');
   if (BLOCKED_AGENT.test(path)) return blocked('running commands or files inside guests is not available to Lares');
   if (path.startsWith('/access/ticket')) return blocked('authentication endpoints are not available to Lares');
@@ -46,13 +49,14 @@ export function classify(method, path, params = {}) {
   const last = segments[segments.length - 1];
   const destructive =
     DESTRUCTIVE_LAST.has(last) ||
-    DESTRUCTIVE_PARAMS.some((p) => params && p in params) ||
+    DESTRUCTIVE_PARAMS.some((p) => p in params) ||
     /^\/nodes\/[^/]+\/status$/.test(path) ||
     (method === 'PUT' && /^\/nodes\/[^/]+\/network$/.test(path)) ||
     path.includes('/firewall/') || path.endsWith('/firewall') ||
     path.startsWith('/access/') ||
     (method === 'PUT' && path.endsWith('/apt/repositories')) ||
-    /\/agent\/(shutdown|suspend-[a-z]+)$/.test(path);
+    /\/agent\/(shutdown|suspend-[a-z]+)$/.test(path) ||
+    /^\/nodes\/[^/]+\/(disks\/(zfs|lvm|lvmthin|directory)|ceph\/osd)$/.test(path);
   return { cls: destructive ? 'destructive' : 'write' };
 }
 

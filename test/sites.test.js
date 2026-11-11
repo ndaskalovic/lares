@@ -45,3 +45,9 @@ test('disableSite unregisters and forgets the origin', async () => {
   assert.equal(chrome._.registered.size, 0);
   assert.deepEqual(await getSites(), []);
 });
+
+test('concurrent enables (permission grant + popup message) do not collide', async () => {
+  await Promise.all([enableSite(A), enableSite(A, 3)]);
+  assert.equal(chrome._.registered.size, 2);
+  assert.ok(chrome._.executed.some((e) => e.files && e.target.tabId === 3));
+});

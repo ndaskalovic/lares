@@ -13,6 +13,9 @@ function inline(s) {
     .replace(/\u0000(\d+)\u0000/g, (_, i) => `<code>${codes[i]}</code>`);
 }
 
+const cells = (row) => row.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => inline(c.trim()));
+const isTableSeparator = (line) => /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/.test(line ?? '');
+
 /** @param {string} src @returns {string} */
 function renderMarkdown(src) {
   const out = [];
@@ -25,7 +28,9 @@ function renderMarkdown(src) {
     para = [];
     list = null;
   };
-  for (const line of escapeHtml(src).split('\n')) {
+  const lines = escapeHtml(src).split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     if (code) {
       if (line.startsWith('```')) { out.push(`<pre><code>${code.map((l) => `${l}\n`).join('')}</code></pre>`); code = null; }
       else code.push(line);
@@ -33,6 +38,14 @@ function renderMarkdown(src) {
     }
     let m;
     if (line.startsWith('```')) { flush(); code = []; }
+    else if (line.trim().startsWith('|') && isTableSeparator(lines[i + 1])) {
+      flush();
+      const head = cells(line).map((c) => `<th>${c}</th>`).join('');
+      const rows = [];
+      for (i += 2; i < lines.length && lines[i].trim().startsWith('|'); i++) rows.push(`<tr>${cells(lines[i]).map((c) => `<td>${c}</td>`).join('')}</tr>`);
+      i--;
+      out.push(`<table><thead><tr>${head}</tr></thead><tbody>${rows.join('')}</tbody></table>`);
+    }
     else if (!line.trim()) flush();
     else if ((m = /^#{1,3}\s+(.*)$/.exec(line))) { flush(); out.push(`<p><strong>${inline(m[1])}</strong></p>`); }
     else if ((m = /^\s*(?:([-*])|\d+\.)\s+(.*)$/.exec(line))) {
