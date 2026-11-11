@@ -106,4 +106,5 @@ details.tool pre { margin: 0; padding: 6px 7px; max-height: 240px; overflow: aut
 footer { display: flex; gap: 6px; padding: 8px; border-top: 1px solid var(--border); background: var(--bg2); }
 textarea { flex: 1; resize: none; background: var(--bg); border: 1px solid var(--field-border); border-radius: 3px; padding: 5px 7px; }
 textarea:disabled { opacity: .6; }
+textarea:focus { outline: none; border-color: #f08a24; box-shadow: 0 0 0 1px rgba(240,138,36,.35); }
 `;
