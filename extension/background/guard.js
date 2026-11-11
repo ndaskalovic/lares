@@ -11,7 +11,8 @@ const DESTRUCTIVE_LAST = new Set([
   'stop', 'reset', 'shutdown', 'reboot', 'suspend', 'rollback', 'migrate', 'remote_migrate', 'relocate',
   'migrateall', 'stopall', 'suspendall', 'template', 'unlink', 'wipedisk', 'initgpt', 'resize', 'move_disk', 'move_volume', 'restart',
 ]);
-const DESTRUCTIVE_PARAMS = ['delete', 'purge', 'destroy-unreferenced-disks', 'force', 'skiplock', 'archive'];
+// archive restores over a guest; args, hookscript and cicustom run code on the host.
+const DESTRUCTIVE_PARAMS = ['delete', 'purge', 'destroy-unreferenced-disks', 'force', 'skiplock', 'archive', 'args', 'hookscript', 'cicustom'];
 
 /**
  * @param {string} method

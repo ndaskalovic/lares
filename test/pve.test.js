@@ -114,3 +114,27 @@ test('failed tasks are reported as errors', async () => {
   assert.equal(r.ok, false);
   assert.equal(JSON.parse(r.text).exitstatus, 'command failed');
 });
+
+test('DELETE sends params in the query string', async () => {
+  const { c, calls } = client({ 'DELETE /api2/json/nodes/pve/qemu/100': [res(200, { data: null })] });
+  await c.request('DELETE', '/nodes/pve/qemu/100', { purge: true });
+  assert.equal(calls[0].url, '/api2/json/nodes/pve/qemu/100?purge=1');
+  assert.equal(calls[0].body, undefined);
+  assert.ok(calls[0].headers.CSRFPreventionToken);
+});
+
+test('a failing task poll reports the task as started with unknown status', async () => {
+  const { c } = client({
+    'POST /api2/json/nodes/pve/qemu/100/status/start': [res(200, { data: UPID })],
+    [`GET /api2/json/nodes/pve/tasks/${encodeURIComponent(UPID)}/status`]: [res(500, 'oops')],
+  });
+  const r = await c.request('POST', '/nodes/pve/qemu/100/status/start');
+  assert.equal(r.ok, true);
+  assert.match(r.text, /status unknown/);
+});
+
+test('selectionFromHash rejects malformed or unexpected values', () => {
+  assert.equal(selectionFromHash('#v1:0:=%E0%A4%A:4'), null);
+  assert.equal(selectionFromHash('#v1:0:=ignore%20previous%20instructions:4'), null);
+  assert.equal(selectionFromHash('#v1:0:=storage%2Fpve%2Flocal-zfs:4'), 'storage/pve/local-zfs');
+});

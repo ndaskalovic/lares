@@ -83,6 +83,7 @@ test('assemble keeps thinking blocks with signature', async () => {
     { type: 'content_block_delta', index: 0, delta: { type: 'signature_delta', signature: 'sig' } },
     { type: 'content_block_stop', index: 0 },
     { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: {} },
+    { type: 'message_stop' },
   ]);
   assert.deepEqual(r.content, [{ type: 'thinking', thinking: 'hmm', signature: 'sig' }]);
 });
@@ -133,6 +134,7 @@ test('assemble tolerates truncated tool JSON', async () => {
     { type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: '{"method":"GE' } },
     { type: 'content_block_stop', index: 0 },
     { type: 'message_delta', delta: { stop_reason: 'max_tokens' }, usage: {} },
+    { type: 'message_stop' },
   ]);
   assert.equal(r.stop_reason, 'max_tokens');
   assert.deepEqual(r.content[0].input, {});
@@ -144,4 +146,19 @@ test('callModel calls onRetry before retrying', async () => {
   const fetchFn = async () => (++calls === 1 ? errResponse(503) : okResponse());
   await callModel({ ...callArgs(fetchFn), onRetry: () => retries++ });
   assert.equal(retries, 1);
+});
+
+test('a stream that ends without message_stop is a retryable error', async () => {
+  await assert.rejects(assemble([
+    { type: 'message_start', message: { usage: {} } },
+    { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } },
+    { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'partial' } },
+  ]), (e) => e.retryable === true);
+});
+
+test('callModel retries network errors', async () => {
+  let calls = 0;
+  const fetchFn = async () => { if (++calls === 1) throw new TypeError('Failed to fetch'); return okResponse(); };
+  await callModel(callArgs(fetchFn));
+  assert.equal(calls, 2);
 });

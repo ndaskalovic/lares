@@ -1,5 +1,5 @@
 // @ts-check
-// The agent loop: one Session per open panel. History is append-only so the prompt cache keeps hitting.
+// The agent loop: one Session per open panel. Sent history is never rewritten, so the prompt cache keeps hitting.
 
 import { classify, decide } from './guard.js';
 import { callModel as realCallModel, PROVIDERS } from './llm.js';
@@ -10,6 +10,7 @@ const MAX_STEPS = 25;
 const MAX_RESULT = 16000;
 const LONG_CHAT_TOKENS = 150000;
 const STOPPED = 'Stopped by user.';
+const STOPPED_IN_FLIGHT = 'Stopped by user. If the action had already started, it may have run; check before retrying.';
 
 /** Caps a tool result, keeping head and tail. */
 export function capResult(text, max = MAX_RESULT) {
@@ -21,7 +22,7 @@ export function capResult(text, max = MAX_RESULT) {
 const toolResult = (id, content, isError) => ({
   type: 'tool_result',
   tool_use_id: id,
-  content: isError && !content.startsWith('ERROR:') ? `ERROR: ${content}` : capResult(content),
+  content: capResult(isError && !content.startsWith('ERROR:') ? `ERROR: ${content}` : content),
   ...(isError ? { is_error: true } : {}),
 });
 
@@ -99,9 +100,13 @@ export class Session {
 
   /** Re-posts state; an empty chat follows the current settings. */
   async refresh() {
+    if (!this.chat) return; // settings changed before the first open finished
     const s = await this.store.getSettings();
     this.mode = s.mode;
-    if (!this.chat.messages.length) this.chat = { ...(await this.newChat()), id: this.chat.id };
+    if (!this.chat.messages.length) {
+      const fresh = await this.newChat();
+      if (!this.chat.messages.length) this.chat = { ...fresh, id: this.chat.id }; // a send may have started meanwhile
+    }
     const key = s.keys[this.chat.provider];
     const setupHint = !s.consent
       ? 'Open settings to review the privacy notice and add your API key.'
@@ -140,7 +145,11 @@ export class Session {
     await this.save();
     let usage = {};
     try {
-      for (let step = 0; step < MAX_STEPS && !this.stopped; step++) {
+      for (let step = 0; !this.stopped; step++) {
+        if (step === MAX_STEPS) {
+          this.post({ type: 'error', message: `Stopped after ${MAX_STEPS} steps. Send a message to continue.` });
+          break;
+        }
         const res = await this.model(chat.messages);
         usage = res.usage;
         chat.messages.push({ role: 'assistant', content: res.content });
@@ -166,7 +175,7 @@ export class Session {
     } finally {
       this.running = false;
       const total = (usage.input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0) + (usage.cache_creation_input_tokens ?? 0);
-      console.debug('usage', usage);
+      console.debug('usage', usage); // for checking prompt-cache hits (docs/manual-test.md)
       this.post({ type: 'done', usage, long: total > LONG_CHAT_TOKENS });
     }
   }
@@ -226,13 +235,20 @@ export class Session {
   stop() {
     this.stopped = true;
     this.abort?.abort();
-    for (const id of [...this.pending.keys()]) this.toolResult(id, STOPPED, true);
+    for (const id of [...this.pending.keys()]) this.toolResult(id, STOPPED_IN_FLIGHT, true);
   }
 
   /** Continues in a new chat seeded with a summary of this one. */
-  async summarize() {
-    if (this.running) return;
+  summarize() {
+    if (this.running) return this.loop;
     this.running = true;
+    this.stopped = false;
+    this.abort = new AbortController();
+    this.loop = this.summarizeTurn();
+    return this.loop;
+  }
+
+  async summarizeTurn() {
     try {
       const messages = structuredClone(this.chat.messages);
       pushUser(messages, [{ type: 'text', text: 'Summarize this conversation so it can be continued in a new chat: goals, findings, current state, open items. Be brief.' }]);
@@ -241,11 +257,12 @@ export class Session {
       this.chat = await this.newChat();
       this.chat.messages.push({ role: 'user', content: [{ type: 'text', text: `Summary of the previous chat:\n${summary}` }] });
       await this.save();
-      await this.refresh();
     } catch (e) {
-      this.post({ type: 'error', message: e.message });
+      if (!this.stopped) this.post({ type: 'error', message: e.message });
     } finally {
       this.running = false;
     }
+    await this.refresh();
+    this.post({ type: 'done', usage: {}, long: false });
   }
 }

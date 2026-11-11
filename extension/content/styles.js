@@ -60,10 +60,10 @@ header select { max-width: 110px; background: var(--bg); border: 1px solid var(-
 .msg th, .msg td { border: 1px solid var(--border); padding: 2px 6px; text-align: left; white-space: nowrap; }
 .msg th { background: var(--bg2); }
 .msg pre { background: var(--bg3); border: 1px solid var(--border); padding: 6px; padding-right: 54px; position: relative; overflow-x: auto; margin: 0 0 6px; }
-.msg pre .copy { position: absolute; top: 4px; right: 4px; font: 11px/14px helvetica, arial, sans-serif; padding: 1px 6px; }
+.msg pre .copy { user-select: none; position: absolute; top: 4px; right: 4px; font: 11px/14px helvetica, arial, sans-serif; padding: 1px 6px; }
 code { font: 12px/16px monospace; }
 .msg a { color: var(--link); }
-.context { color: var(--muted); font-size: 11px; display: block; }
+.context { color: var(--muted); font-size: 11px; align-self: flex-end; margin-bottom: -6px; }
 
 .msg.streaming > p:last-child::after, .msg.streaming > :is(ul, ol):last-child > li:last-child::after, .msg.streaming:empty::after {
   content: ''; display: inline-block; width: 7px; height: 13px; margin-left: 3px; vertical-align: -2px; border-radius: 2px;

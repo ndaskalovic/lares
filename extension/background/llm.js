@@ -85,6 +85,7 @@ export async function assemble(events, onText) {
   const json = [];
   let stop_reason = null;
   let usage = {};
+  let complete = false;
   for await (const e of events) {
     switch (e.type) {
       case 'message_start':
@@ -114,6 +115,9 @@ export async function assemble(events, onText) {
         stop_reason = e.delta?.stop_reason ?? stop_reason;
         Object.assign(usage, e.usage);
         break;
+      case 'message_stop':
+        complete = true;
+        break;
       case 'error': {
         const err = new Error(e.error?.message || 'Stream error');
         // @ts-ignore
@@ -121,6 +125,13 @@ export async function assemble(events, onText) {
         throw err;
       }
     }
+  }
+  if (!complete) {
+    // A dropped connection ends the stream "normally"; a partial message (e.g. unsigned thinking) must not be saved.
+    const err = new Error('The response was cut off.');
+    // @ts-ignore
+    err.retryable = true;
+    throw err;
   }
   return { content: content.filter(Boolean), stop_reason, usage };
 }
@@ -147,7 +158,9 @@ export function errorMessage(status, body) {
 export async function callModel({ provider, model, effort, key, system, tools, messages, onText, onRetry, signal, fetchFn = (...a) => fetch(...a) }) {
   const body = JSON.stringify(buildBody({ provider, model, effort, system, tools, messages }));
   for (let attempt = 0; ; attempt++) {
-    const res = await fetchFn(`${PROVIDERS[provider].base}/v1/messages`, {
+    let res;
+    try {
+      res = await fetchFn(`${PROVIDERS[provider].base}/v1/messages`, {
       method: 'POST',
       signal,
       headers: {
@@ -157,7 +170,13 @@ export async function callModel({ provider, model, effort, key, system, tools, m
         'anthropic-dangerous-direct-browser-access': 'true',
       },
       body,
-    });
+      });
+    } catch (e) {
+      if (e.name === 'AbortError' || attempt >= MAX_RETRIES) throw e;
+      await sleep(1000 * 2 ** attempt); // network error
+      onRetry?.();
+      continue;
+    }
     if (res.ok) {
       try {
         return await assemble(sseEvents(res.body), onText);

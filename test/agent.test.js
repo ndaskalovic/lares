@@ -273,3 +273,45 @@ test('legacy chats without a frozen system drop thinking blocks once', async () 
   assert.deepEqual(s.chat.messages[1].content, [text('hello')]);
   assert.ok(s.chat.system[1].text.includes('old memo'));
 });
+
+test('summarize after a stop shows the new chat and finishes', async () => {
+  const { s, posts } = await setup([
+    reply([use('p', 'pve', { method: 'POST', path: '/nodes/pve/qemu/100/status/start' })], 'tool_use'),
+    reply([text('SUMMARY')]),
+  ]);
+  const running = s.send('start', null);
+  await nextTool(posts);
+  s.stop();
+  await running;
+  const from = posts.length;
+  await s.summarize();
+  const state = posts.slice(from).find((m) => m.type === 'state');
+  assert.ok(state.chat, 'state carries the new chat');
+  assert.equal(state.chat.id, s.chat.id);
+  assert.equal(posts.at(-1).type, 'done');
+});
+
+test('stop after a tool was dispatched says the outcome is unknown', async () => {
+  const { s, posts } = await setup([reply([use('p', 'pve', { method: 'POST', path: '/nodes/pve/qemu/100/status/start' })], 'tool_use')]);
+  const running = s.send('start', null);
+  await nextTool(posts);
+  s.stop();
+  await running;
+  assert.match(s.chat.messages.at(-1).content[0].content, /may have run/);
+});
+
+test('hitting the step limit tells the user', async () => {
+  const script = Array.from({ length: 25 }, (_, i) => reply([use(`r${i}`, 'remember', { note: String(i) })], 'tool_use'));
+  const { s, posts } = await setup(script);
+  await s.send('loop', null);
+  assert.ok(posts.some((m) => m.type === 'error' && /25 steps/.test(m.message)));
+});
+
+test('large error results are capped too', async () => {
+  const { s } = await setup([reply([use('x', 'pve', { method: 'GET', path: '/nodes' })], 'tool_use'), reply([text('ok')])]);
+  const running = s.send('go', null);
+  await new Promise((r) => setTimeout(r, 5));
+  s.toolResult('x', 'e'.repeat(40000), true);
+  await running;
+  assert.ok(s.chat.messages[2].content[0].content.length <= 16100);
+});

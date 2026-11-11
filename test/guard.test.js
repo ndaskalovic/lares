@@ -93,3 +93,9 @@ test('lockout-prone and cluster-changing writes are destructive', () => {
   ]) assert.equal(classify(m, p).cls, 'destructive', `${m} ${p}`);
   assert.equal(classify('POST', '/cluster/sdn/vnets').cls, 'write');
 });
+
+test('params that run code on the host are destructive', () => {
+  for (const p of ['args', 'hookscript', 'cicustom']) {
+    assert.equal(classify('PUT', '/nodes/pve/qemu/100/config', { [p]: 'x' }).cls, 'destructive', p);
+  }
+});

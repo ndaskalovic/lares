@@ -208,6 +208,9 @@ class Panel {
     history.replaceChildren(...(s.chats.some((c) => c.id === s.chat.id) ? [] : [new Option('New chat', s.chat.id)]),
       ...s.chats.map((c) => new Option(c.title, c.id)));
     history.value = s.chat.id;
+    // A reconnect while a message is being sent re-sends the same chat: keep the bubble that's on screen.
+    if (this.running && s.chat.id === this.chatId) return;
+    this.chatId = s.chat.id;
     this.cancelCards();
     this.setRunning(false);
     this.renderHistory(s.chat.messages);
@@ -220,8 +223,9 @@ class Panel {
     for (const m of messages) {
       for (const b of m.content) {
         if (m.role === 'user' && b.type === 'text') {
-          if (b.text.startsWith('[Selected in UI: ')) continue;
-          this.messages.append(el('div', 'msg user', b.text));
+          const context = /^\[Selected in UI: (.*)\]$/.exec(b.text);
+          if (context) this.messages.append(el('div', 'context', `Selected: ${context[1]}`));
+          else this.messages.append(el('div', 'msg user', b.text));
         } else if (b.type === 'text' && b.text) {
           const div = el('div', 'msg');
           setMarkdown(div, b.text);

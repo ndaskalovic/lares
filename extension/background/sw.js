@@ -17,7 +17,8 @@ chrome.runtime.onStartup.addListener(init);
 
 // The popup may close while Chrome shows the permission prompt, so registration also follows the grant itself.
 chrome.permissions.onAdded.addListener(({ origins = [] }) => {
-  for (const o of origins) enableSite(o.replace(/\/\*$/, ''));
+  // Only single sites the popup asked for; ignore wildcard grants such as "all sites".
+  for (const o of origins) if (!o.slice(0, -2).includes('*')) enableSite(o.replace(/\/\*$/, ''));
 });
 
 chrome.permissions.onRemoved.addListener(({ origins = [] }) => {

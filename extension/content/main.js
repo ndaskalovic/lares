@@ -26,7 +26,7 @@
       onNew: () => send({ type: 'new' }),
       onOpen: (chatId) => send({ type: 'open', chatId }),
       onMode: (mode) => send({ type: 'mode', mode }),
-      onSummarize: () => send({ type: 'summarize' }),
+      onSummarize: () => { panel.setRunning(true); send({ type: 'summarize' }); },
     });
 
     async function loadSchema() {
@@ -42,7 +42,14 @@
       }
     }
 
-    async function connect() {
+    let connecting = null;
+    /** Connects once; concurrent callers (restore + a fast send) share the same attempt. */
+    function connect() {
+      connecting ??= open().finally(() => { connecting = null; });
+      return connecting;
+    }
+
+    async function open() {
       if (port) return;
       await loadSchema();
       const env = { user: readTicket(document.cookie)?.user, version: await client.version().catch(() => undefined) };

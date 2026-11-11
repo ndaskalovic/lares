@@ -27,10 +27,16 @@ function csrfAge(token, now = Date.now()) {
   return now - parseInt(token.split(':')[0], 16) * 1000;
 }
 
-/** Selected resource from the UI's state hash, e.g. `#v1:0:=qemu%2F100:…` → `qemu/100`. */
+/** Selected resource from the UI's state hash, e.g. `#v1:0:=qemu%2F100:…` → `qemu/100`. Anything else is dropped: the hash is page-controlled. */
 function selectionFromHash(hash) {
   const item = hash.split(':')[2];
-  return item?.startsWith('=') ? decodeURIComponent(item.slice(1)) : null;
+  if (!item?.startsWith('=')) return null;
+  try {
+    const id = decodeURIComponent(item.slice(1));
+    return /^[\w\-./]+$/.test(id) ? id : null;
+  } catch {
+    return null;
+  }
 }
 
 /** @param {Record<string, unknown>} params */
@@ -59,12 +65,16 @@ class PveClient {
   async call(method, path, params) {
     if (method !== 'GET' && (!this.csrf || csrfAge(this.csrf) > CSRF_MAX_AGE)) await this.refreshCsrf();
     const query = encodeParams(params);
-    const isGet = method === 'GET';
-    return this.fetchFn(`/api2/json${path}${isGet && query ? `?${query}` : ''}`, {
+    // pveproxy reads a body only for POST/PUT; GET and DELETE params go in the query string.
+    const inBody = method === 'POST' || method === 'PUT';
+    return this.fetchFn(`/api2/json${path}${!inBody && query ? `?${query}` : ''}`, {
       method,
       credentials: 'same-origin',
-      headers: isGet ? {} : { CSRFPreventionToken: this.csrf ?? '', 'content-type': 'application/x-www-form-urlencoded' },
-      ...(isGet ? {} : { body: query }),
+      headers: {
+        ...(method === 'GET' ? {} : { CSRFPreventionToken: this.csrf ?? '' }),
+        ...(inBody ? { 'content-type': 'application/x-www-form-urlencoded' } : {}),
+      },
+      ...(inBody ? { body: query } : {}),
     });
   }
 
@@ -88,10 +98,21 @@ class PveClient {
 
   /** Polls a task until it stops (or times out) and returns its exit status and log tail. */
   async waitTask(upid) {
+    try {
+      return await this.pollTask(upid);
+    } catch {
+      // The write did start; never let a failed status check look like a failed write (the model might repeat it).
+      return { ok: true, text: JSON.stringify({ upid, note: 'Task started; status unknown (polling failed).' }) };
+    }
+  }
+
+  async pollTask(upid) {
     const node = upid.split(':')[1];
     const base = `/nodes/${node}/tasks/${encodeURIComponent(upid)}`;
     for (let waited = 0; waited < TASK_TIMEOUT_MS; waited += TASK_POLL_MS) {
-      const status = (await (await this.call('GET', `${base}/status`)).json()).data ?? {};
+      const res = await this.call('GET', `${base}/status`);
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const status = (await res.json()).data ?? {};
       if (status.status === 'stopped') {
         const log = (await (await this.call('GET', `${base}/log`, { start: 0, limit: 500 })).json()).data ?? [];
         const exitstatus = status.exitstatus;
