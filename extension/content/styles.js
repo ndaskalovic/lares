@@ -4,18 +4,24 @@
 const PANEL_CSS = `
 :host { all: initial; }
 :host {
-  --bg: #fff; --bg2: #f5f5f5; --bg3: #fafafa; --fg: #333; --muted: #777; --border: #cfcfcf;
-  --accent: #3892d4; --accent-strong: #157fcc; --danger: #c9302c; --user: #e8f2fb;
+  /* crisp (light) theme */
+  --bg: #fff; --bg2: #f5f5f5; --bg3: #f5f5f5; --fg: #000; --muted: #666; --border: #d0d0d0; --field-border: #cfcfcf;
+  --button: #f5f5f5; --button-hover: #e6e6e6; --accent: #3892d4; --accent-strong: #157fcc; --link: #157fcc;
+  --danger: #c9302c; --danger-bg: #c9302c; --user: #c2ddf2;
   font: 13px/17px helvetica, arial, verdana, sans-serif; color: var(--fg);
 }
 :host(.dark) {
-  --bg: hsl(0,0%,15%); --bg2: hsl(0,0%,20%); --bg3: hsl(0,0%,10%); --fg: hsl(0,0%,95%); --muted: hsl(0,0%,65%);
-  --border: hsl(0,0%,40%); --accent: hsl(205,100%,32%); --accent-strong: hsl(205,100%,40%); --danger: #d9534f; --user: hsl(205,40%,22%);
+  /* proxmox-dark theme variables (proxmox-widget-toolkit src/proxmox-dark/scss/abstracts/_variables.scss) */
+  --bg: hsl(0,0%,15%); --bg2: hsl(0,0%,20%); --bg3: hsl(0,0%,10%); --fg: hsl(0,0%,95%); --muted: hsl(0,0%,60%);
+  --border: hsl(0,0%,25%); --field-border: hsl(0,0%,40%);
+  --button: hsl(0,0%,25%); --button-hover: hsl(0,0%,35%); --accent: hsl(205,100%,32.25%); --accent-strong: hsl(205,100%,40.5%);
+  --link: hsl(205,100%,65%); --danger: hsl(360,100%,65%); --danger-bg: hsl(360,60%,40%); --user: hsl(0,0%,30%);
 }
 * { box-sizing: border-box; }
 button, select, textarea { font: inherit; color: inherit; }
-button { cursor: pointer; background: var(--bg2); border: 1px solid var(--border); border-radius: 3px; padding: 3px 8px; }
-button:hover { border-color: var(--accent); }
+button { cursor: pointer; background: var(--button); border: 1px solid var(--field-border); border-radius: 3px; padding: 3px 8px; }
+button:hover { background: var(--button-hover); }
+button.primary:hover { background: var(--accent-strong); }
 button.primary { background: var(--accent); border-color: var(--accent-strong); color: #fff; }
 
 .tab {
@@ -34,7 +40,7 @@ button.primary { background: var(--accent); border-color: var(--accent-strong); 
 header { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--bg2); border-bottom: 1px solid var(--border); }
 header .title { font-weight: bold; }
 header .model { color: var(--muted); font-size: 11px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-header select { max-width: 110px; background: var(--bg); border: 1px solid var(--border); border-radius: 3px; }
+header select { max-width: 110px; background: var(--bg); border: 1px solid var(--field-border); border-radius: 3px; }
 .mode { display: flex; }
 .mode button { border-radius: 0; padding: 2px 6px; }
 .mode button:first-child { border-radius: 3px 0 0 3px; }
@@ -56,7 +62,7 @@ header select { max-width: 110px; background: var(--bg); border: 1px solid var(-
 .msg pre { background: var(--bg3); border: 1px solid var(--border); padding: 6px; padding-right: 54px; position: relative; overflow-x: auto; margin: 0 0 6px; }
 .msg pre .copy { position: absolute; top: 4px; right: 4px; font: 11px/14px helvetica, arial, sans-serif; padding: 1px 6px; }
 code { font: 12px/16px monospace; }
-.msg a { color: var(--accent-strong); }
+.msg a { color: var(--link); }
 .context { color: var(--muted); font-size: 11px; display: block; }
 
 .msg.streaming > :last-child::after, .msg.streaming:empty::after {
@@ -94,10 +100,10 @@ details.tool pre { margin: 0; padding: 6px 7px; max-height: 240px; overflow: aut
 .card table { border-collapse: collapse; margin: 6px 0; font: 12px/16px monospace; }
 .card td { padding: 1px 8px 1px 0; vertical-align: top; overflow-wrap: anywhere; }
 .card .actions { display: flex; gap: 6px; }
-.card.destructive .approve { background: var(--danger); border-color: var(--danger); color: #fff; }
+.card.destructive .approve { background: var(--danger-bg); border-color: var(--danger-bg); color: #fff; }
 .card .decided { color: var(--muted); }
 
 footer { display: flex; gap: 6px; padding: 8px; border-top: 1px solid var(--border); background: var(--bg2); }
-textarea { flex: 1; resize: none; background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 5px 7px; }
+textarea { flex: 1; resize: none; background: var(--bg); border: 1px solid var(--field-border); border-radius: 3px; padding: 5px 7px; }
 textarea:disabled { opacity: .6; }
 `;
