@@ -33,11 +33,12 @@ jobs:
         run: |
           xcrun safari-web-extension-packager extension --project-location safari --app-name Lares \
             --bundle-identifier io.github.ndaskalovic.lares --swift --macos-only --copy-resources --no-open --force
-      - name: Prefix the extension's bundle ID with the app's
+      - name: Match the app's bundle ID case to the extension's
         run: |
+          # The packager derives the app ID from --app-name ("…Lares") but the extension's from
+          # --bundle-identifier ("…lares.Extension"); Xcode requires the extension's to be prefixed by the app's.
           pbx=$(find safari -name project.pbxproj | head -1)
-          grep -o 'PRODUCT_BUNDLE_IDENTIFIER = [^;]*' "$pbx" | sort -u
-          perl -pi -e 's/(PRODUCT_BUNDLE_IDENTIFIER = )(?!io\.github\.ndaskalovic\.lares;)[^;]+;/$1io.github.ndaskalovic.lares.Extension;/' "$pbx"
+          sed -i '' 's/PRODUCT_BUNDLE_IDENTIFIER = io\.github\.ndaskalovic\.Lares;/PRODUCT_BUNDLE_IDENTIFIER = io.github.ndaskalovic.lares;/' "$pbx"
           grep -o 'PRODUCT_BUNDLE_IDENTIFIER = [^;]*' "$pbx" | sort -u
       - name: Build unsigned app
         run: |
